@@ -59,33 +59,61 @@ Notes
 
   type RingMap = Map[Int, Coord]
 
-  /**
-    * Given a ring number and a start pos, walk around and build the rings coords
-    * @param startNum
-    * @param ringNum
-    * @param startPos
-    * @param ringMap
-    * @return
-    */
-  def buildRingNFromPoint(startNum : Int, ringNum : Int, startPos : Coord, ringMap: RingMap) : (RingMap, Coord, Int) = {
-    ???
+/*
+  How to build a spiral
+
+
+           543
+           612  (0,0)
+           789
+
+  move right
+  2 (1,0)
+  if something to the left move up
+  else if nothing to the left and something above move right
+  else if nothing beneath and something to the right move down
+  else move left
+  else done
+
+ */
+
+  // on entry we start with startNum and coord, add that the map and unless done recursively call this
+  // moving around in a spiral following the rules above
+  def buildRingNFromPoint(startNum : Int, startPos: Coord, ringMap : RingMap) : (Int, RingMap, Coord) = {
+
+    // see who's around us (this indicates we should probably use a graph)
+
+    val alreadySet = ringMap.values.toSet
+
+    val above = alreadySet.contains(startPos.copy(y = startPos.y + 1))
+    val below = alreadySet.contains(startPos.copy(y = startPos.y - 1))
+    val right = alreadySet.contains(startPos.copy(x = startPos.x + 1))
+    val left = alreadySet.contains(startPos.copy(x = startPos.x - 1))
+
+    if(left == true)  buildRingNFromPoint(startNum + 1, startPos.copy(y = startPos.y + 1), ringMap + (startNum -> startPos))
+    else if(below == true) buildRingNFromPoint(startNum + 1, startPos.copy(x = startPos.x - 1), ringMap + (startNum -> startPos))
+    else if(right == true)  buildRingNFromPoint(startNum + 1, startPos.copy(y = startPos.y - 1), ringMap + (startNum -> startPos))
+    else if(above == true)  buildRingNFromPoint(startNum + 1, startPos.copy(x = startPos.x + 1), ringMap + (startNum -> startPos))
+    else (startNum, ringMap, startPos)
+
   }
+
 
   /**
     * Build a spiral of numRings rings by literally walking around in a spiral
-    * @param numRings
+    * @param maxNum The number of spiral points to generate starting from 1
     * @return
     */
-  def buildSpiral(numRings: Int) : RingMap = {
+  def buildSpiral(maxNum: Int) : RingMap = {
 
     val ring1 = Map(1 -> Coord(0,0))
 
-    (2 to numRings).foldLeft((2, ring1, Coord(0,0))) {
-      case ((startNum, ringMap, startPos), ringNum) =>
+    (2 until maxNum).foldLeft((2, ring1, Coord(1,0))) {
+      case ((startNum, ringMap, startPos), num) =>
 
-        buildRingNFromPoint(startNum, ringNum, startPos, ringMap)
+        buildRingNFromPoint(num, startPos, ringMap)
 
-    }._1
+    }._2
   }
 
   def main(args : Array[String]): Unit = {
@@ -93,6 +121,10 @@ Notes
     val testInput = "347991"
 
     println(s"hello ${getRingWidth(3)}")
+
+    val s = buildSpiral(3)
+
+    s
 
 
   }
