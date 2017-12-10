@@ -523,10 +523,19 @@ object Day4 {
   def wordsAreUnique(words: List[String], seen : Set[String] = Set.empty) : Boolean = {
     words match {
       case word :: rest =>
+        if(seen.contains(word)) false
+        else wordsAreUnique(rest, seen + word)
+      case Nil => true
+    }
+  }
+
+  def sortedWordsAreUnique(words: List[String], seen : Set[String] = Set.empty) : Boolean = {
+    words match {
+      case word :: rest =>
         val sortedWord = word.sorted
 
         if(seen.contains(sortedWord)) false
-        else wordsAreUnique(rest, seen + sortedWord)
+        else sortedWordsAreUnique(rest, seen + sortedWord)
       case Nil => true
     }
   }
@@ -540,6 +549,8 @@ object Day4 {
 
     wordsAreUnique(words)
   }
+
+  def sortWords(words: List[String]) : List[String] = words.map(_.sorted)
 
   def checkValid(str: String): Boolean = {
     val words = str.split(' ').toList
@@ -563,15 +574,16 @@ object Day4 {
       The system's full passphrase list is available as your puzzle input. How many passphrases are valid?
      */
 
-    val lines = Stream.emit[Pure, String](testInput)
+    val countValid = Stream.emit[Pure, String](testInput)
       .through(text.lines)
-      .map(checkValid)
+      .map(splitToWords)
+      .map(wordsAreUnique(_))
       .fold(0) {
         case (acc, what) =>
           acc + (if(what) 1 else 0)
       }
 
-    val result = lines.toList.head
+    val result = countValid.toList.head
 
     println(s"Part one: $result")
 
@@ -589,8 +601,20 @@ object Day4 {
       oiii ioii iioi iiio is not valid - any of these words can be rearranged to form any other word.
 
      */
-    
 
+      val countValidSorted = Stream.emit[Pure, String](testInput)
+        .through(text.lines)
+        .map(splitToWords)
+        .map(sortWords)
+        .map(wordsAreUnique(_))
+        .fold(0) {
+          case (acc, what) =>
+            acc + (if(what) 1 else 0)
+        }
+
+      val result2 = countValidSorted.toList.head
+
+      println(s"Part two: $result2")
   }
 
 
