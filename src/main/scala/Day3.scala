@@ -1,9 +1,9 @@
-
-
 object Day3 {
 
 
 /*
+
+Part 1
 
 17  16  15  14  13
 18   5   4   3  12
@@ -28,35 +28,38 @@ i  (1 + (i*2)) ^ 2
 
 By calculating where a number fits in this sequence we can determine the ring.
 
-Unfortunately knowing the ring doesn't give us the Manhatten distance, for that we
+Unfortunately knowing the ring doesn't give us the Manhattan distance, for that we
 need the x and y delta from zero ...
 
-We would need to calculate this x and y height using knowledge of the spiral
-structure ...
+A simple way to solve this puzzle is to build the spiral manually as a look up table
+of memory address to coord. A map is an obvious choice to store this.
 
-17  16  15  14  13
-18   5   4   3  12
-19   6   1   2  11
-20   7   8   9  10
-21  22  23  24  25
-
-Notes
-- the first number in the spiral is immediately to the right of 1
-- its x distance will be the ring number -1
-- eg 2 has x distance (2-1) and 11 has ring distance
-
+Then we can simply find the coord of a memory address and return the manhattan distance of
+that coord
 
  */
 
-  def getRingSize(i : Int) : Int = {
-    val x = 1 + (i*2)
-    x * x
+
+  // When generating a spiral we want to know how long each side of each ring is
+  // This can be calculated easily ...
+  // 1 2 3 4 5
+  // 1 3 5 7 9
+  def getRingSide(ring: Int) : Int = 1 + ((ring - 1) * 2)
+
+  // A simple Coord class that lets us get adjacent coords
+  // and the manhattan distance
+  case class Coord(x: Int, y: Int) {
+
+    def right: Coord = this.copy(x = x + 1)
+    def left: Coord = this.copy(x = x - 1)
+    def up: Coord = this.copy(y = y + 1)
+    def down: Coord = this.copy(y = y - 1)
+
+    def manhattan : Int = Math.abs(x) + Math.abs(y)
+
   }
 
-  def getRingWidth(ring: Int) : Int = 1 + (ring * 2)
-
-  case class Coord(x: Int, y: Int)
-
+  // Our look up table is a map of memory address to Coord
   type RingMap = Map[Int, Coord]
 
 /*
@@ -67,65 +70,90 @@ Notes
            612  (0,0)
            789
 
-  move right
-  2 (1,0)
-  if something to the left move up
-  else if nothing to the left and something above move right
-  else if nothing beneath and something to the right move down
-  else move left
-  else done
+  Using a fold we will iteratively build the spiral by moving up, left, down and right
+  at the appropriate number of steps for the current ring size
 
  */
 
-  // on entry we start with startNum and coord, add that the map and unless done recursively call this
+  // On entry we start with startNum and coord, add that the map and unless done recursively call this
   // moving around in a spiral following the rules above
-  def buildRingNFromPoint(startNum : Int, startPos: Coord, ringMap : RingMap) : (Int, RingMap, Coord) = {
+  def buildRingNFromPoint(startNum : Int, startPos: Coord, ringMap : RingMap, ringNum : Int) : (Int, RingMap, Coord) = {
 
-    // see who's around us (this indicates we should probably use a graph)
+    // we need to know the size of the sides of the spiral which can be calculated by ring num
+    val sides = getRingSide(ringNum)
 
-    val alreadySet = ringMap.values.toSet
+    val coordsToGenerate = sides * 2 + (sides - 2) * 2
 
-    val above = alreadySet.contains(startPos.copy(y = startPos.y + 1))
-    val below = alreadySet.contains(startPos.copy(y = startPos.y - 1))
-    val right = alreadySet.contains(startPos.copy(x = startPos.x + 1))
-    val left = alreadySet.contains(startPos.copy(x = startPos.x - 1))
+    val result = (1 to coordsToGenerate).foldLeft((startNum, startPos, ringMap)) {
+      case ((curNum,curPos,curMap), num) =>
 
-    if(left == true)  buildRingNFromPoint(startNum + 1, startPos.copy(y = startPos.y + 1), ringMap + (startNum -> startPos))
-    else if(below == true) buildRingNFromPoint(startNum + 1, startPos.copy(x = startPos.x - 1), ringMap + (startNum -> startPos))
-    else if(right == true)  buildRingNFromPoint(startNum + 1, startPos.copy(y = startPos.y - 1), ringMap + (startNum -> startPos))
-    else if(above == true)  buildRingNFromPoint(startNum + 1, startPos.copy(x = startPos.x + 1), ringMap + (startNum -> startPos))
-    else (startNum, ringMap, startPos)
+        num / (sides-1) match {
+          case 0 => (curNum + 1, curPos.up, curMap updated (curNum, curPos))
+          case 1 => (curNum + 1, curPos.left, curMap updated (curNum, curPos))
+          case 2 => (curNum + 1, curPos.down, curMap updated (curNum, curPos))
+          case 3 => (curNum + 1, curPos.right, curMap updated (curNum, curPos))
+          case 4 => (curNum + 1, curPos, curMap updated (curNum, curPos))
+        }
+    }
 
+    (result._1, result._3, result._2)
   }
 
 
   /**
-    * Build a spiral of numRings rings by literally walking around in a spiral
-    * @param maxNum The number of spiral points to generate starting from 1
-    * @return
+    * Build a spiral memory incrementing the address location
+    * @param numRings How many rings to generate
+    * @return Map of addresses and their coordinates
     */
-  def buildSpiral(maxNum: Int) : RingMap = {
+  def buildSpiral(numRings: Int) : RingMap = {
 
+    // Note it would be nice to generate location 1 as part of the same loop
     val ring1 = Map(1 -> Coord(0,0))
 
-    (2 until maxNum).foldLeft((2, ring1, Coord(1,0))) {
-      case ((startNum, ringMap, startPos), num) =>
+    (2 to numRings).foldLeft((2, ring1, Coord(0,0))) {
+      case ((startNum, ringMap, startPos), ringNum) =>
 
-        buildRingNFromPoint(num, startPos, ringMap)
+        buildRingNFromPoint(startNum, startPos.right, ringMap, ringNum)
 
     }._2
   }
 
+  // We need to know how many rings of the spiral to generate
+  // which can be calculated iteratively as follows ...
+
+  def getRingNumberForLocation(location: Int, ring : Int = 0) : Int = {
+
+    val s = getRingSide(ring)
+    val maxForRing = s * s
+
+    if(location <= maxForRing) ring
+    else getRingNumberForLocation(location, ring + 1)
+
+  }
+
   def main(args : Array[String]): Unit = {
 
-    val testInput = "347991"
+    val testInput = "347991".toInt
 
-    println(s"hello ${getRingWidth(3)}")
+    val maxRing = getRingNumberForLocation(testInput + 1)
 
-    val s = buildSpiral(3)
+    /*
+      Data from square 1 is carried 0 steps, since it's at the access port.
+      Data from square 12 is carried 3 steps, such as: down, left, left.
+      Data from square 23 is carried only 2 steps: up twice.
+      Data from square 1024 must be carried 31 steps.
+     */
 
-    s
+    // generate a spiral of the required number of rings (3)
 
+    val genSpiral = buildSpiral(maxRing)
+
+    assert(genSpiral(1).manhattan == 0)
+    assert(genSpiral(12).manhattan == 3)
+    assert(genSpiral(23).manhattan == 2)
+    assert(genSpiral(1024).manhattan == 31)
+
+    print(s"Step one answer: ${genSpiral(testInput).manhattan}")
 
   }
 
