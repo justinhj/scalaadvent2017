@@ -3,7 +3,7 @@ import fs2.{Pure, Stream, text}
 
 object Day4 {
 
-  val testInput = """nyot babgr babgr kqtu kqtu kzshonp ylyk psqk
+  val testInput : String = """nyot babgr babgr kqtu kqtu kzshonp ylyk psqk
                     |iix ewj rojvbkk phrij iix zuajnk tadv givslju ewj bda
                     |isjur jppvano vctnpjp ngwzdq pxqfrk mnxxes zqwgnd giqh
                     |ojufqke gpd olzirc jfao cjfh rcivvw pqqpudp
@@ -529,34 +529,11 @@ object Day4 {
     }
   }
 
-  def sortedWordsAreUnique(words: List[String], seen : Set[String] = Set.empty) : Boolean = {
-    words match {
-      case word :: rest =>
-        val sortedWord = word.sorted
-
-        if(seen.contains(sortedWord)) false
-        else sortedWordsAreUnique(rest, seen + sortedWord)
-      case Nil => true
-    }
-  }
-
   def splitToWords(str: String): List[String] = {
     str.split(' ').toList
   }
 
-  def checkValidAnagram(str: String): Boolean = {
-    val words = str.split(' ').toList
-
-    wordsAreUnique(words)
-  }
-
   def sortWords(words: List[String]) : List[String] = words.map(_.sorted)
-
-  def checkValid(str: String): Boolean = {
-    val words = str.split(' ').toList
-
-    wordsAreUnique(words)
-  }
 
   def main(args : Array[String]): Unit = {
 
@@ -616,7 +593,5 @@ object Day4 {
 
       println(s"Part two: $result2")
   }
-
-
-
+  
 }
