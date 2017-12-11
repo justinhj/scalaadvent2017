@@ -593,5 +593,5 @@ object Day4 {
 
       println(s"Part two: $result2")
   }
-  
+
 }
