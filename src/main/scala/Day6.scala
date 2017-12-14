@@ -43,6 +43,22 @@ object Day6 {
 
   }
 
+  // This time instead of a set we will store a Map of Banks to step counts, then when we hit the duplicate
+  // we will immediately know the count ...
+  def countStepsToDuplicatePartTwo(bank: Bank, previous : Map[Bank,Int] = Map.empty, count : Int = 0) : Int = {
+
+    val reallocated = reallocate(bank)
+
+    previous.get(reallocated) match {
+      case Some(dupe) =>
+        (count + 1) - dupe
+
+      case None =>
+        countStepsToDuplicatePartTwo(reallocated, previous updated (reallocated, count + 1), count + 1)
+    }
+
+  }
+
   def main(args : Array[String]) : Unit = {
 
     val stepOneInput = "0\t5\t10\t0\t11\t14\t13\t4\t11\t8\t8\t7\t1\t4\t12\t11"
@@ -64,7 +80,16 @@ object Day6 {
 
     println(s"Step one bank duplicate count : $stepOneBankCount")
 
+    // Part two is the same but we need to count the steps so we know
+    // how many steps it was since the duplicate occurred
 
+    val exampleBankCount2 = countStepsToDuplicatePartTwo(exampleBank)
+
+    println(s"Example bank duplicate count part two : $exampleBankCount2")
+
+    val stepTwoBankCount = countStepsToDuplicatePartTwo(stepOneBank)
+
+    println(s"Step two bank duplicate count : $stepTwoBankCount")
 
   }
 
