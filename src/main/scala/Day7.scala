@@ -78,6 +78,66 @@ object Day7 {
     SupportingProgram(root, program.get.weight, supportingPrograms)
   }
 
+  // Now to find the unbalanced tree, we will print out any trees that are unbalanced compared to their
+  // cousin nodes
+
+  def findUnbalance(root: SupportingProgram) : Int = {
+
+    if(root.supporting.isEmpty) {
+      val total = root.weight
+
+      //println(s"leaf ${root.name} $total")
+
+      total
+    }
+    else {
+
+      val childWeights = root.supporting.map {
+        supported =>
+          (findUnbalance(supported), supported)
+      }
+
+      // one of the weights may be wrong. we will make a frequency map of the weights
+      // and if there is more than one key, the outlier will be revealed
+
+      val freq = childWeights.foldLeft(Map.empty[Int, Int]) {
+
+        case (freqMap, (w,s)) =>
+          val count = freqMap.getOrElse(w, 0)
+          freqMap updated (w, count + 1)
+
+      }
+
+      // find the outlier which has count 1
+      // and the non-outliers to find the weight difference
+
+      if(freq.keys.size > 1) {
+        for(
+          outlier <- freq.find{case (weight, count) => count == 1};
+          normal <- freq.find{case (weight, count) => count != 1};
+          outlyingProgram <- childWeights.find {
+            case (w, sp) =>
+              w == outlier._1
+          }
+        ) {
+
+          val diff = outlier._1 - normal._1
+
+          println(s"diff $diff")
+          println(s"To balance change ${outlyingProgram._2.name} weight from ${outlyingProgram._2.weight} to ${outlyingProgram._2.weight - diff}")
+
+        }
+      }
+
+      val childWeightsOnly = childWeights.map{w => w._1}
+      val total = root.weight + childWeightsOnly.sum
+      //println(s"branch ${root.name} this ${root.weight} child weights ${childWeightsOnly.sum} total ${root.weight + childWeightsOnly.sum} freq ${freq}")
+
+      total
+    }
+
+  }
+
   def main(args : Array[String]) : Unit = {
 
     val exampleInput =
@@ -122,91 +182,13 @@ object Day7 {
 
     val exampleTree = buildTree(samplePrograms, supportNetwork, bottom)
 
-    // Let's write a depth first search that prints the weight of each tree leaf
-
-    def treeWeights(root: SupportingProgram, weight : Int) : Unit = {
-
-      if(root.supporting.isEmpty) {
-        println(s"${root.name} ${root.weight + weight}")
-      } else {
-        root.supporting.foreach {
-          thisTree =>
-            treeWeights(thisTree, root.weight + weight + thisTree.weight)
-        }
-
-      }
-
-    }
-
-    treeWeights(exampleTree, 0)
-
-    // Now to find the unbalanced tree, we will print out any trees that are unbalanced compared to their
-    // cousin nodes
-
-    def getWeight(root: SupportingProgram) : Int = {
-
-      if(root.supporting.isEmpty) {
-        val total = root.weight
-
-        println(s"leaf ${root.name} $total")
-
-        total
-      }
-      else {
-
-        val childWeights = root.supporting.map {
-          supported =>
-            (getWeight(supported), supported)
-        }
-
-        // one of the weights may be wrong. we will make a frequency map of the weights
-        // and if there is more than one key, the outlier will be revealed
-
-        val freq = childWeights.foldLeft(Map.empty[Int, Int]) {
-
-          case (freqMap, (w,s)) =>
-            val count = freqMap.getOrElse(w, 0)
-            freqMap updated (w, count + 1)
-
-        }
-
-        // find the outlier which has count 1
-        // and the non-outliers to find the weight difference
-
-        if(freq.keys.size > 1) {
-          for(
-            outlier <- freq.find{case (weight, count) => count == 1};
-            normal <- freq.find{case (weight, count) => count != 1};
-            outlyingProgram <- childWeights.find {
-              case (w, sp) =>
-                w == outlier._1
-            }
-          ) {
-
-            val diff = outlier._1 - normal._1
-
-            println(s"diff $diff")
-            println(s"To balance change ${outlyingProgram._2.name} weight from ${outlyingProgram._2.weight} to ${outlyingProgram._2.weight - diff}")
-
-          }
-        }
-
-        val childWeightsOnly = childWeights.map{w => w._1}
-        val total = root.weight + childWeightsOnly.sum
-        println(s"branch ${root.name} this ${root.weight} child weights ${childWeightsOnly.sum} total ${root.weight + childWeightsOnly.sum} freq ${freq}")
-
-        total
-      }
-
-    }
-
-    getWeight(exampleTree)
+    findUnbalance(exampleTree)
 
     // Do the same for the input
 
     val step1Tree = buildTree(step1Programs, step1SupportNetwork, step1Bottom)
 
-    getWeight(step1Tree)
+    findUnbalance(step1Tree)
 
 
 
