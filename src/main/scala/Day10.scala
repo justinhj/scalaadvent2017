@@ -58,9 +58,48 @@ your puzzle input. Once this process is complete, what is the result of multiply
   val input = "31,2,85,1,80,109,35,63,98,255,0,13,105,254,128,33"
 
 
+  def reverseSegment(curPos: Int, segmentSize: Int, input: Vector[Int]) : Vector[Int] = {
+
+    // let's avoid wrapping issues by making sure the input is long enough
+
+    val longEnough = input ++ input
+
+    val reversedSegment = longEnough.slice(curPos, curPos + segmentSize).reverse
+
+    // return a vector that starts with the reversed segment and fills the remainder with the existing numbers
+
+    reversedSegment ++ longEnough.slice(curPos + segmentSize, input.size)
+
+  }
+
+  def findHash(ringSize: Int, steps: List[Int]) : Int = {
+
+    val (c,s,finalRing) = steps.foldLeft((0, 0, (0 until ringSize).toVector)) {
+      case ((cur, skip, ring), step) =>
+        val newInput = reverseSegment(cur, step, ring)
+        println(s"newInput $newInput")
+        (cur + step + skip, skip + 1, newInput)
+    }
+
+    finalRing(0) * finalRing(1)
+  }
+
   def main(args : Array[String]) = {
 
-    println("ass")
+    println("1")
+
+    val testInputs = "3 4 1 5".split(" ").toList.map(_.toInt)
+
+//    testInputs.foldLeft((0, 0, (0 until 5).toVector)) {
+//      case ((cur, skip, acc), step) =>
+//        val newInput = reverseSegment(cur, step, acc)
+//        (cur + step, skip + 1, newInput)
+//    }
+
+    val testHash = findHash(5, testInputs)
+
+    var x = 1
+    x = 2
 
   }
 
