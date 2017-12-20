@@ -82,7 +82,7 @@ What is the total score for all groups in your input?
             case ',' if streamState.garbage == false =>
               streamState
 
-            case '<' =>
+            case '<' if streamState.garbage == false =>
               streamState.copy(garbage = true)
 
             case '>' =>
@@ -108,6 +108,7 @@ What is the total score for all groups in your input?
   }
 
   def main(args: Array[String]): Unit = {
+
     assert(evalStream("{}")._1 == 1)
     assert(evalStream("{{{}}}")._1 == 6)
     assert(evalStream("{{},{}}")._1 == 5)
@@ -118,9 +119,19 @@ What is the total score for all groups in your input?
     assert(evalStream("{{<a!>},{<a!>},{<a!>},{<ab>}}")._1 == 3)
 
     assert(evalStream("{<a>,<a>,<a>,<a>}")._2 == 4)
+    assert(evalStream("{<a!!>,<a!!!!aaa>,<aa>,<aa>}")._2 == 9)
+
 
     assert(evalStream("<>")._1 == 0)
     assert(evalStream("<random characters>")._1 == 0)
+
+    assert(evalStream("<>")._2 == 0)
+    assert(evalStream("<random characters>")._2 == 17)
+    assert(evalStream("<<<<>")._2 == 3)
+    assert(evalStream("<{!>}>")._2 == 2)
+    assert(evalStream("<!!>")._2 == 0)
+    assert(evalStream("<!!!>>")._2 == 0)
+    assert(evalStream("<{o\"i!a,<{i<a>")._2 == 10)
 
     val step1Input = Source.fromResource("input9.txt").mkString
 
