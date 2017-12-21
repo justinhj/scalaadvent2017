@@ -55,30 +55,45 @@ your puzzle input. Once this process is complete, what is the result of multiply
 
    */
 
-  val input = "31,2,85,1,80,109,35,63,98,255,0,13,105,254,128,33"
+  val taskInput = "31,2,85,1,80,109,35,63,98,255,0,13,105,254,128,33"
 
+  // Helper to copy a vector over a vector but instead of lengthening it for overlap we must wrap around
 
-  def reverseSegment(curPos: Int, segmentSize: Int, input: Vector[Int]) : Vector[Int] = {
+  def copyOverWithWrap(ov: Vector[Int], nv: Vector[Int], startAt: Int) : Vector[Int] = {
 
-    // let's avoid wrapping issues by making sure the input is long enough
+    val len = ov.size
+
+    nv.foldLeft(ov, startAt) {
+      case ((newV, curPos), nextI) =>
+
+        (newV.updated(curPos, nextI), (curPos + 1) % len)
+    }._1
+
+  }
+
+  // reverse a section of a vector, wrapping around as needed
+  // for example args (3, List(0,1,2,3,4) would give List(2, 1, 0, 3, 4))
+  // having this as a helper function makes findHash a lot easier to read (and write)
+
+  def reverseSection(curPos: Int, segmentSize: Int, input: Vector[Int]) : Vector[Int] = {
 
     val longEnough = input ++ input
 
     val reversedSegment = longEnough.slice(curPos, curPos + segmentSize).reverse
 
-    // return a vector that starts with the reversed segment and fills the remainder with the existing numbers
-
-    reversedSegment ++ longEnough.slice(curPos + segmentSize, input.size)
+    copyOverWithWrap(input, reversedSegment, curPos)
 
   }
+
+  // The main hash algorithm just needs the size of the digits, let's call it a ring
+  // since it's circular
 
   def findHash(ringSize: Int, steps: List[Int]) : Int = {
 
     val (c,s,finalRing) = steps.foldLeft((0, 0, (0 until ringSize).toVector)) {
       case ((cur, skip, ring), step) =>
-        val newInput = reverseSegment(cur, step, ring)
-        println(s"newInput $newInput")
-        (cur + step + skip, skip + 1, newInput)
+        val newInput = reverseSection(cur, step, ring)
+        ((cur + step + skip) % ringSize, skip + 1, newInput)
     }
 
     finalRing(0) * finalRing(1)
@@ -86,20 +101,17 @@ your puzzle input. Once this process is complete, what is the result of multiply
 
   def main(args : Array[String]) = {
 
-    println("1")
-
     val testInputs = "3 4 1 5".split(" ").toList.map(_.toInt)
-
-//    testInputs.foldLeft((0, 0, (0 until 5).toVector)) {
-//      case ((cur, skip, acc), step) =>
-//        val newInput = reverseSegment(cur, step, acc)
-//        (cur + step, skip + 1, newInput)
-//    }
 
     val testHash = findHash(5, testInputs)
 
-    var x = 1
-    x = 2
+    println(s"test input gave hash $testHash")
+
+    val taskInputs = taskInput.split(",").toList.map{_.toInt}
+
+    val taskHash = findHash(256, taskInputs)
+
+    println(s"task input gave hash $taskHash") // gave 6952 which is correct
 
   }
 
