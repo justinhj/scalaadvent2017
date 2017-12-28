@@ -13,6 +13,7 @@ object Day11 {
 
     val directions = List(N, NE, SE, S, SW, NW)
 
+    // Look up table to get the opposite direction given a direction
     def reverseDirection : Map[Direction,Direction] = Map (
       (NW, SE),
       (N, S),
@@ -22,10 +23,12 @@ object Day11 {
       (SW, NE)
     )
 
+    // Return the angle in degrees a direction takes rotating clockwise
     def getAngle(direction: Direction) : Double = {
         direction.id * 60
     }
 
+    // Try to convert a string to a direction
     def fromString(s: String) : Option[Direction] = {
 
       s match {
@@ -40,17 +43,13 @@ object Day11 {
     }
   }
 
+  // Graph related stuff
+
   import HexNode._
 
   case class Connection(direction: Direction, from: HexNode, to: HexNode)
 
   case class HexGraph(root: HexNode, connection: Set[Connection])
-
-  def buildGraph : HexGraph = {
-
-    HexGraph(HexNode(getNextId, 0), Set.empty)
-
-  }
 
   def findConnection(fromID: Int, direction: Direction, connections: Set[Connection]) : Option[Connection] = {
 
@@ -62,6 +61,7 @@ object Day11 {
   }
 
   // expand each node on the graph until it reaches maxDistance
+  // maybe buggy did not finish testing it
   def expandGraph(root: HexNode, maxDistance: Int, connections : Set[Connection], explored : Set[Int]) : (Set[Connection], Set[Int]) = {
 
     if(root.distance == maxDistance || explored.contains(root.id))
@@ -91,7 +91,6 @@ object Day11 {
     }
 
   }
-
 
   object HexNode {
     var nextID = 0
@@ -149,6 +148,8 @@ object Day11 {
 //    HexNode(0, nodes)
 //
 //  }
+
+  // Convert input string to a list of directions
 
   def inputToDirections(input: String): List[Direction] = {
     input.split(',').toList.flatMap(Direction.fromString)
@@ -220,6 +221,7 @@ object Day11 {
 
   }
 
+  // Note this is unused, and was an earlier attempt to achieve the cancellation algorithm above
 
   def sumDirections(steps: List[Direction]) : Int = {
 
@@ -260,6 +262,8 @@ object Day11 {
     Math.abs(adjustedNorths - adjustedSouths) + Math.abs(newnwAfterReplace - newseAfterReplace) + Math.abs(newneAfterReplace - newswAfterReplace)
   }
 
+  // Sum unused utilities to get the count of rings of hexes ...
+
   def ringCount(n: Int) = 6 * n
 
   val ringCounts = (1 to 20).foldLeft(List(0), 0) {
@@ -283,6 +287,9 @@ object Day11 {
           r._1
     }
   }
+
+  // Geometric solution, the code calculates the distance to the origin but I couldn't figure out
+  // how to then get the min hex steps back ...
 
   object Vector2 {
     val origin = Vector2(0.0,0.0)
@@ -429,12 +436,12 @@ object Day11 {
 
     //val rings = (0 to 21).map(n => ringFromNum(n))
 
-    assert(ringFromNum(0) == 0)
-    assert(ringFromNum(1) == 1)
-    assert(ringFromNum(5) == 1)
-    assert(ringFromNum(6) == 1)
-    assert(ringFromNum(15) == 2)
-    assert(ringFromNum(18) == 2)
+//    assert(ringFromNum(0) == 0)
+//    assert(ringFromNum(1) == 1)
+//    assert(ringFromNum(5) == 1)
+//    assert(ringFromNum(6) == 1)
+//    assert(ringFromNum(15) == 2)
+//    assert(ringFromNum(18) == 2)
 
 //
 //    val angles = Direction.directions.foreach {
@@ -453,56 +460,70 @@ object Day11 {
 //    }
 
 
-    //val g = buildGraph
-    val root = HexNode(getNextId, 0)
-//    val e1 = expandGraph(root, 1, Set.empty, Set.empty)
-//    val e2 = expandGraph(root, 2, e1._1, Set.empty)
-//    val e3 = expandGraph(root, 3, e2._1, Set.empty)
+//    //val g = buildGraph
+//    val root = HexNode(getNextId, 0)
+////    val e1 = expandGraph(root, 1, Set.empty, Set.empty)
+////    val e2 = expandGraph(root, 2, e1._1, Set.empty)
+////    val e3 = expandGraph(root, 3, e2._1, Set.empty)
+//
+//    val expanded = (1 to 5).foldLeft(Set.empty[Connection]) {
+//      case (newConn, c) =>
+//        expandGraph(root, c, newConn, Set.empty)._1
+//    }
 
-    val expanded = (1 to 5).foldLeft(Set.empty[Connection]) {
-      case (newConn, c) =>
-        expandGraph(root, c, newConn, Set.empty)._1
-    }
-
-    def walkGraph(current: HexNode, dirs: List[Direction], connections: Set[Connection]) : HexNode = {
-
-        dirs match {
-
-          case d :: rest =>
-
-            findConnection(current.id, d, connections) match {
-
-              case Some(c) =>
-
-                walkGraph(c.to, rest, connections)
-
-              case None =>
-
-                println(s"No connection from node $current")
-
-                ???
-
-            }
-
-          case Nil =>
-
-            current
-
-        }
-
-
-    }
+//    def walkGraph(current: HexNode, dirs: List[Direction], connections: Set[Connection]) : HexNode = {
+//
+//        dirs match {
+//
+//          case d :: rest =>
+//
+//            findConnection(current.id, d, connections) match {
+//
+//              case Some(c) =>
+//
+//                walkGraph(c.to, rest, connections)
+//
+//              case None =>
+//
+//                println(s"No connection from node $current")
+//
+//                ???
+//
+//            }
+//
+//          case Nil =>
+//
+//            current
+//
+//        }
+//
+//
+//    }
 //
 //    val w1  = walkGraph(root, inputToDirections("ne,ne,ne"), expanded)
 //    val w2 = walkGraph(root, inputToDirections("ne,ne,sw,sw"), expanded)
 //    val w3 = walkGraph(root, inputToDirections("ne,ne,s,s"), expanded)
 //    val w4 = walkGraph(root, inputToDirections("se,sw,se,sw,sw"), expanded)
 
-    var x = 1
 
-    x = 2
+    // slow but workable solution to step 2, find the furthest we get from the origin by evaluating all the paths
+    // step by step
 
+    val steps = inputToDirections(stepInput).toList
 
+    val furthest = (1 to steps.size).foldLeft(0) {
+
+      case (max, numSteps) =>
+
+        val thisSteps = steps.take(numSteps)
+
+        val dist = getCancelledLength(thisSteps)
+
+        if(dist > max) dist
+        else max
+    }
+
+    println(s"Step 2 : $furthest")
   }
 
 
