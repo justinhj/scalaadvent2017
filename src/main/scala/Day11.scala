@@ -194,12 +194,11 @@ object Day11 {
 
   }
 
-  // recursively shorten the path until it stops reducing
-
   import Direction._
 
-  @tailrec
-  def cancelUntilDone(directions: Map[Direction, Int]): Map[Direction, Int] = {
+  // shorten the path
+
+  def shortenPath(directions: Map[Direction, Int]): Map[Direction, Int] = {
 
     val startLen = directions.values.sum
 
@@ -214,10 +213,7 @@ object Day11 {
     val d8 = convertPairs(S, NW, SW, d7)
     val d9 = convertPairs(N, SW, NW, d8)
 
-    val finalLen = d9.values.sum
-
-    if(startLen == finalLen) directions
-    else cancelUntilDone(d9)
+    d9
 
   }
 
@@ -368,7 +364,7 @@ object Day11 {
         acc updated (d, count + 1)
     }
 
-    val cancelledCount = cancelUntilDone(directionCount)
+    val cancelledCount = shortenPath(directionCount)
 
     cancelledCount.values.sum
   }

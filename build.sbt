@@ -8,4 +8,4 @@ libraryDependencies += "co.fs2" %% "fs2-core" % "0.9.7"
 
 scalacOptions += "-Ypartial-unification"
 
-libraryDependencies += "org.typelevel" %% "cats-core" % "1.0.0-RC1"
+libraryDependencies += "org.typelevel" %% "cats-core" % "1.0.0"
