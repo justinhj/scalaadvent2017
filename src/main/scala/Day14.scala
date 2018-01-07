@@ -127,6 +127,7 @@ How many regions are present given your key string?
   }
 
   type MemoryMap = Vector[Vector[Boolean]]
+  type ComponentMap = Map[(Int,Int), Int]
 
   def inputToVectorOfVector(input: String) : MemoryMap = {
 
@@ -151,80 +152,79 @@ How many regions are present given your key string?
 
   def rowColToIndex(row: Int, col: Int, width: Int) = col + (row * width)
 
-  def tryToConnect(row: Int, col: Int, uf: UF, mm : MemoryMap) : Unit = {
-
-    val w = mm.size
+  def tryToConnect(row: Int, col: Int, uf: UF, mm : MemoryMap, components: ComponentMap) : Unit = {
 
     if(isSet(row, col, mm)) {
-      if(leftIsSet(row, col, mm))
-        uf.union(rowColToIndex(row, col, w),
-          rowColToIndex(row, col - 1, w))
-      else if(aboveIsSet(row, col, mm))
-        uf.union(rowColToIndex(row, col, w),
-          rowColToIndex(row - 1, col, w))
+
+      if(leftIsSet(row, col, mm)) {
+
+        val p1 = components.get(row,col).get
+        val p2 = components.get(row,col - 1).get
+
+        uf.union(p1,p2)
+      }
+
+      if(aboveIsSet(row, col, mm)){
+
+        val p1 = components.get(row - 1, col).get
+        val p2 = components.get(row,col).get
+
+        uf.union(p1,p2)
+      }
     }
 
   }
 
-  def countGroups(memoryMap: MemoryMap) : Int = {
+  /*
+    * step 1 enumerate the set memory with node ids Map[(col,row), Int]
+    * step 2 create uf with the map size components
+    * step 3 iterate over the memory and create links to left and above nodes
+    * step 4 uf count should be correct
+  */
 
-    val size = memoryMap.size
+  def countGroups(mm: MemoryMap) : Int = {
 
-    // Use the Java implementation of union find to create the set of
-    // connected components
-    val uf = new UF(size * size)
+    val size = mm.size
 
-    // iterate through the memory map and as we go we will create connections
-    // to the node to the left and above by calling the union function
+    val allCoords = for (
+      row <- 0 until size;
+      col <- 0 until size
+    ) yield (row, col)
 
-    for (
-      row <- (0 until size);
-      col <- (0 until size);
-      _ = tryToConnect(row, col, uf, memoryMap)
 
-    ) yield ()
+    val (components, nextId) = allCoords.foldLeft(Map.empty[(Int,Int), Int], 0) {
+          case ((acc, nextId), (row, col)) =>
 
-    // UF (union find) now contains the count of unique groups but it also counts empty memory cells
-    // our solution needs to count the empty cells and subtract that from the final count
+            if(isSet(row, col, mm))
+              (acc updated((row, col), nextId), nextId + 1)
+            else
+              (acc, nextId)
+        }
 
-    // return the set of parents
+    // Handle no set memory
+    if(nextId == 0)  {
+      0
+    }
+    else {
 
-    val parents = (0 until size).flatMap {
-     row =>
-       (0 until size).foldLeft(Set.empty[Int]) {
-         case (acc, col) =>
-          if(isSet(row,col,memoryMap))
-            acc + uf.find(rowColToIndex(row, col, size))
-          else
-            acc
-       }
+      val count = nextId
+
+      val uf = new UF(count)
+
+      for (
+        row <- (0 until size);
+        col <- (0 until size);
+        _ = tryToConnect(row, col, uf, mm, components)
+
+      ) yield ()
+
+
+      uf.count()
     }
 
-    parents.size
   }
 
   def main(args : Array[String]) : Unit = {
-
-    val testVector = Vector(
-      false,false,false,false,
-      false,false,false,false,
-      false,false,false,true,
-      false,false,false,true)
-
-    val t2 = hashStringToBooleanVector("11")
-    assert(t2 == testVector)
-
-    val testVector2 = Vector(
-      Vector(true,false,false,false),
-      Vector(false,true,true,false),
-      Vector(true,false,false,true),
-      Vector(true,true,false,true))
-
-    val testSmallGroupCount = countGroups(testVector2)
-
-    val memoryMap = inputToVectorOfVector("flqrgnkx")
-
-    val testGroupCount = countGroups(memoryMap)
 
     assert(countBitsInHexString("f") == 4)
 
@@ -243,6 +243,35 @@ How many regions are present given your key string?
     val count = countUsed("hfdlxzhv")
 
     println(s"Used count (step1): $count")
+
+    val testVector = Vector(
+      false,false,false,false,
+      false,false,false,false,
+      false,false,false,true,
+      false,false,false,true)
+
+    val t2 = hashStringToBooleanVector("11")
+    assert(t2 == testVector)
+
+    val testVector2 = Vector(
+      Vector(true,false,false,false),
+      Vector(false,true,true,false),
+      Vector(true,false,false,true),
+      Vector(true,true,false,true))
+
+    val testSmallGroupCount = countGroups(testVector2)
+
+    val testGroupMM = inputToVectorOfVector("flqrgnkx")
+
+    val testGroupCount = countGroups(testGroupMM)
+
+    println(s"Test group answer is $testGroupCount")
+
+    val step2GroupMM = inputToVectorOfVector("hfdlxzhv")
+
+    val step2GroupCount = countGroups(step2GroupMM)
+
+    println(s"Step 2 group answer is $step2GroupCount")
 
   }
 
