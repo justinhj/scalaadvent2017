@@ -1,4 +1,4 @@
-object Day13 {
+object Day13FS2 {
 
   val testInput = """0: 3
                     |1: 2
@@ -114,6 +114,16 @@ object Day13 {
 
   }
 
+  // Use FS2 streams
+  // Demonstrates parallel and short circuiting
+
+  def getEvadeFirewallDelay(layers: Map[Int,Int]) : Int = {
+
+
+
+    ???
+  }
+
   // delay longer and longer until we succeed
   def getEvadeFirewallDelay(layers: Map[Int,Int], delay : Int = 0) : Int = {
 
@@ -130,67 +140,79 @@ object Day13 {
 
   def main(args: Array[String]) : Unit = {
 
+
+    // delay is an increasing value from 0 until we find a solution
+
+    val delayStream : Stream[Int] = Stream.from(0)
+
+    val test10 = delayStream.take(10)
+
+    val output = test10.toVector
+
+    println(output)
+
     // Step 1 is simple, we just recursively determine group 0 and output the size
 
-    val step1Input = parseInput(step1InputLines)
-    val testInput = parseInput(testInputLines)
-
-    assert(simulate(testInput) == 24)
-
-    println(s"Step 1: ${simulate(step1Input)}")
-
-    // Step 2
-
-    assert(getEvadeFirewallDelay(testInput) == 10)
-
-    println(s"Step 2: ${getEvadeFirewallDelay(step1Input)}")
+//    val step1Input = parseInput(step1InputLines)
+//    val testInput = parseInput(testInputLines)
+//
+//    assert(simulate(testInput) == 24)
+//
+//    println(s"Step 1: ${simulate(step1Input)}")
+//
+//    // Step 2
+//
+//    assert(getEvadeFirewallDelay(testInput) == 10)
+//
+//    println(s"Step 2: ${getEvadeFirewallDelay(step1Input)}")
 
 
   }
 
   val step1InputLines = """0: 3
-                     |1: 2
-                     |2: 4
-                     |4: 4
-                     |6: 5
-                     |8: 6
-                     |10: 6
-                     |12: 6
-                     |14: 6
-                     |16: 8
-                     |18: 8
-                     |20: 8
-                     |22: 8
-                     |24: 10
-                     |26: 8
-                     |28: 8
-                     |30: 12
-                     |32: 14
-                     |34: 12
-                     |36: 10
-                     |38: 12
-                     |40: 12
-                     |42: 9
-                     |44: 12
-                     |46: 12
-                     |48: 12
-                     |50: 12
-                     |52: 14
-                     |54: 14
-                     |56: 14
-                     |58: 12
-                     |60: 14
-                     |62: 14
-                     |64: 12
-                     |66: 14
-                     |70: 14
-                     |72: 14
-                     |74: 14
-                     |76: 14
-                     |80: 18
-                     |88: 20
-                     |90: 14
-                     |98: 17""".stripMargin.lines.toList
+                          |1: 2
+                          |2: 4
+                          |4: 4
+                          |6: 5
+                          |8: 6
+                          |10: 6
+                          |12: 6
+                          |14: 6
+                          |16: 8
+                          |18: 8
+                          |20: 8
+                          |22: 8
+                          |24: 10
+                          |26: 8
+                          |28: 8
+                          |30: 12
+                          |32: 14
+                          |34: 12
+                          |36: 10
+                          |38: 12
+                          |40: 12
+                          |42: 9
+                          |44: 12
+                          |46: 12
+                          |48: 12
+                          |50: 12
+                          |52: 14
+                          |54: 14
+                          |56: 14
+                          |58: 12
+                          |60: 14
+                          |62: 14
+                          |64: 12
+                          |66: 14
+                          |70: 14
+                          |72: 14
+                          |74: 14
+                          |76: 14
+                          |80: 18
+                          |88: 20
+                          |90: 14
+                          |98: 17""".stripMargin.lines.toList
 
 
 }
+
