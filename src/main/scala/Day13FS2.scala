@@ -1,3 +1,8 @@
+import cats.Eval
+import cats.effect.IO
+import fs2.{Pure, Stream}
+import cats.instances.all
+
 object Day13FS2 {
 
   val testInput = """0: 3
@@ -143,13 +148,25 @@ object Day13FS2 {
 
     // delay is an increasing value from 0 until we find a solution
 
-    val delayStream : Stream[Int] = Stream.from(0)
+    val delayStream: Stream[Pure, Int] = Stream.range(0, 20)
 
-    val test10 = delayStream.take(10)
+    //val test10: Stream[Eval, Int] = delayStream.take(10) // see range
 
-    val output = test10.toVector
+    val test10_2: Stream[Pure, Int] = Stream.range(0, 10)
 
-    println(output)
+    val output: Stream[Pure, Int] = delayStream ++ test10_2
+
+    val what = output.compile
+    //val whatNow: Pure[List[Int]] = what.toList
+
+    //println("list " + output.compile.toList)
+
+
+    val io1: Stream[IO, Unit] = Stream.eval(IO{ println("IO happened yay") })
+
+    io1.compile.drain.unsafeRunSync()
+
+    io1.compile.drain.unsafeRunSync()
 
     // Step 1 is simple, we just recursively determine group 0 and output the size
 

@@ -551,7 +551,7 @@ object Day4 {
       The system's full passphrase list is available as your puzzle input. How many passphrases are valid?
      */
 
-    val countValid = Stream.emit[Pure, String](testInput)
+    val countValid = Stream.emit[String](testInput)
       .through(text.lines)
       .map(splitToWords)
       .map(wordsAreUnique(_))
@@ -579,7 +579,7 @@ object Day4 {
 
      */
 
-      val countValidSorted = Stream.emit[Pure, String](testInput)
+      val countValidSorted = Stream.emit[String](testInput)
         .through(text.lines)
         .map(splitToWords)
         .map(sortWords)

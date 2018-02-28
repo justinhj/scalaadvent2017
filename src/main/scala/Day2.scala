@@ -39,7 +39,7 @@ object Day2 {
       max - min
     }
 
-    val lines = Stream.emit[Pure, String](str)
+    val lines = Stream.emit[String](str)
       .through(text.lines)
       .map(toListOfInts)
       .map(checkSumLine)
@@ -60,7 +60,7 @@ object Day2 {
 
   def findDivisible(str: String) : Int = {
 
-    val lines = Stream.emit[Pure, String](str)
+    val lines = Stream.emit[String](str)
       .through(text.lines)
       .map(toListOfInts)
       .map(combs)
