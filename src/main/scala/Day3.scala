@@ -1,6 +1,5 @@
 object Day3 {
 
-
 /*
 
 Part 1
@@ -131,6 +130,64 @@ that coord
 
   }
 
+  // Part two
+
+  type SpiralMemory = Map[Int, Int]
+  type ReverseRingMap = Map[Coord, Int]
+
+  def reverseRingMapFromRingMap(r: RingMap) : ReverseRingMap = {
+
+    r.foldLeft(Map.empty[Coord,Int]) {
+      case (rrm, (k,v)) => rrm updated (v,k)
+    }
+  }
+
+  def storeNeighbourSum(location: Int, memory: SpiralMemory, ringMap: RingMap, reverseRingMap: ReverseRingMap) : SpiralMemory = {
+
+    // Square one is a special case
+
+    if(location == 1) memory updated (1, 1)
+    else {
+      // Get the coord of this location and all the neighbours
+      val thisCoord: Coord = ringMap(location)
+
+      val right = thisCoord.right
+      val left = thisCoord.left
+      val up = thisCoord.up
+      val down = thisCoord.down
+
+      val rightdown = thisCoord.right.down
+      val leftdown = thisCoord.left.down
+      val rightup = thisCoord.right.up
+      val leftup = thisCoord.left.up
+
+      // Get the value at each point
+
+      val neighbourLocations = List(
+        reverseRingMap.get(right),
+        reverseRingMap.get(left),
+        reverseRingMap.get(up),
+        reverseRingMap.get(down),
+        reverseRingMap.get(rightdown),
+        reverseRingMap.get(leftdown),
+        reverseRingMap.get(rightup),
+        reverseRingMap.get(leftup)
+
+      ).flatten
+
+      val sum = neighbourLocations.foldLeft(0) {
+
+        case (acc, loc) =>
+          acc + memory.getOrElse(loc, 0)
+      }
+
+      // Store it
+
+      memory updated (location, sum)
+    }
+
+  }
+
   def main(args : Array[String]): Unit = {
 
     val testInput = "347991".toInt
@@ -146,14 +203,78 @@ that coord
 
     // generate a spiral of the required number of rings (3)
 
-    val genSpiral = buildSpiral(maxRing)
+    val spiralMemoryRingMap = buildSpiral(maxRing)
 
-    assert(genSpiral(1).manhattan == 0)
-    assert(genSpiral(12).manhattan == 3)
-    assert(genSpiral(23).manhattan == 2)
-    assert(genSpiral(1024).manhattan == 31)
+    assert(spiralMemoryRingMap(1).manhattan == 0)
+    assert(spiralMemoryRingMap(12).manhattan == 3)
+    assert(spiralMemoryRingMap(23).manhattan == 2)
+    assert(spiralMemoryRingMap(1024).manhattan == 31)
 
-    print(s"Step one answer: ${genSpiral(testInput).manhattan}")
+    print(s"Part one answer: ${spiralMemoryRingMap(testInput).manhattan}")
+
+    /*
+     --- Part Two ---
+
+      As a stress test on the system, the programs here clear the grid and then store the value 1 in square 1. Then, in the same allocation order as shown above, they store the sum of the values in all adjacent squares, including diagonals.
+
+      So, the first few squares' values are chosen as follows:
+
+      Square 1 starts with the value 1.
+      Square 2 has only one adjacent filled square (with value 1), so it also stores 1.
+      Square 3 has both of the above squares as neighbors and stores the sum of their values, 2.
+      Square 4 has all three of the aforementioned squares as neighbors and stores the sum of their values, 4.
+      Square 5 only has the first and fourth squares as neighbors, so it gets the value 5.
+      Once a square is written, its value does not change. Therefore, the first few squares would receive the following values:
+
+      147  142  133  122   59
+      304    5    4    2   57
+      330   10    1    1   54
+      351   11   23   25   26
+      362  747  806--->   ...
+      What is the first value written that is larger than your puzzle input?
+
+      Your puzzle input is still 347991.
+     */
+
+    // So to perform this calculation we need a way to store values in the memory locations
+    // and a way to get the neighbouring values...
+    // To that end we can make a new data structure that stores values by memory address
+    // (1 -> 1, 2 -> 1, 3 -> 2 ...)
+    // Then we can use the code and data from part one to get the coords of memory addresses
+    // we intend to write and calculate the sum of the neighbours...
+    // We also need to the find the memory location of a coord so let's make a reverse map for that
+
+    val reverseRingMap = reverseRingMapFromRingMap(spiralMemoryRingMap)
+
+    val memory = Map.empty[Int,Int]
+
+    val test = (1 to 5).foldLeft(memory) {
+      case (mem, loc) =>
+        storeNeighbourSum(loc, mem, spiralMemoryRingMap, reverseRingMap)
+    }
+
+    print(test)
+
+    // Ok that works, now we need to recursively find the first bigger value than our test input
+
+    def firstBigger(currentLocation: Int, memory: SpiralMemory, ringMap: RingMap, reverseRingMap: ReverseRingMap, target: Int) : Int = {
+
+      val updatedMemory = storeNeighbourSum(currentLocation, memory, spiralMemoryRingMap, reverseRingMap)
+
+      // what value did we write?
+
+      val value = updatedMemory(currentLocation)
+
+      // is bigger than target?
+
+      if(value > target) value
+      else firstBigger(currentLocation + 1, updatedMemory, ringMap, reverseRingMap, target)
+
+    }
+
+    val partTwo = firstBigger(1, memory, spiralMemoryRingMap, reverseRingMap, testInput)
+
+    println(s"Part two: $partTwo")
 
   }
 

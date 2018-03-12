@@ -57,7 +57,7 @@ object Day13 {
           case None =>
             //println(s"No layer at $time")
             caughtCost
-            
+
           case Some(range) =>
 
             val caught = scannerAtZero(time, range)
