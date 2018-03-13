@@ -168,6 +168,27 @@ object Day13FS2 {
 
     io1.compile.drain.unsafeRunSync()
 
+    def myRepeat[F[_], A](stream: Stream[F,A]) : Stream[F,A] = {
+      stream ++ myRepeat(stream)
+    }
+
+    val s : Stream[Pure, Int] = Stream(1,0)
+
+    val repeated = myRepeat(s).take(6).toList
+
+    println(s"repeated $repeated")
+
+    def myDrain[F[_], A](stream: Stream[F,A]) : Stream[F,A] = {
+
+      Stream.empty
+
+    }
+
+    val s2 = Stream(1,2,3)
+    val drained = myDrain(s2).toList
+
+    println(s"drained $drained")
+
     // Step 1 is simple, we just recursively determine group 0 and output the size
 
 //    val step1Input = parseInput(step1InputLines)
