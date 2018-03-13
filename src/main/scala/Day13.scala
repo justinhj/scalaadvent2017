@@ -55,6 +55,7 @@ object Day13 {
           case None =>
             //println(s"No layer at $time")
             caughtCost
+
           case Some(range) =>
 
             val caught = scannerAtZero(time, range)
@@ -144,6 +145,11 @@ object Day13 {
     assert(getEvadeFirewallDelay(testInput) == 10)
 
     println(s"Step 2: ${getEvadeFirewallDelay(step1Input)}")
+
+    // Bonus round, run concurrently
+
+
+
 
 
   }
