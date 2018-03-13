@@ -1,5 +1,3 @@
-import Day7.Program
-
 
 object Day25 {
 
@@ -16,7 +14,7 @@ object Day25 {
   case class Program(startState: Char, checksumAtStep: Long, states : Map[Char, State])
 
   // The tape is made up of linked slots
-  case class Slot(value: Int = 0, left: Option[Slot], right: Option[Slot]) {
+  case class Slot(var value: Int = 0, var left: Option[Slot], var right: Option[Slot]) {
 
     def leftMostSlot(slot: Slot) : Slot = {
 
@@ -29,10 +27,10 @@ object Day25 {
 
     def printTapeToRight(slot: Slot) : Unit = {
 
+      println(s"${slot.value} ")
+
       slot.right match {
         case Some(r) =>
-          println(s"${r.value} ")
-
           printTapeToRight(r)
 
         case None =>
@@ -84,22 +82,20 @@ object Day25 {
 
     def executeOp(op: Op) : TuringMachine = {
 
-      // Update the current slot based on movement
-
-      val updatedSlot = currentSlot.copy(value = op.writeValue)
+      currentSlot.value = op.writeValue
 
       op.move match {
 
         case Left =>
-          val updatedSlot = currentSlot.copy(value = op.writeValue)
 
           currentSlot.left match {
 
             case Some(leftSlot) =>
-              TuringMachine(currentSlot = leftSlot.copy(right = Some(updatedSlot)), op.continueState, program, steps + 1)
+              TuringMachine(currentSlot = leftSlot, op.continueState, program, steps + 1)
 
             case None =>
-              TuringMachine(currentSlot = Slot(0, None, Some(currentSlot)), op.continueState, program, steps + 1)
+              currentSlot.left = Some(Slot(0, None, Some(currentSlot)))
+              TuringMachine(currentSlot = currentSlot.left.get, op.continueState, program, steps + 1)
           }
 
         case Right =>
@@ -107,10 +103,11 @@ object Day25 {
           currentSlot.right match {
 
             case Some(rightSlot) =>
-              TuringMachine(currentSlot = rightSlot.copy(left = Some(updatedSlot)), op.continueState, program, steps + 1)
+              TuringMachine(currentSlot = rightSlot, op.continueState, program, steps + 1)
 
             case None =>
-              TuringMachine(currentSlot = Slot(0, Some(currentSlot), None), op.continueState, program, steps + 1)
+              currentSlot.right = Some(Slot(0, Some(currentSlot), None))
+              TuringMachine(currentSlot.right.get, op.continueState, program, steps + 1)
           }
 
       }
