@@ -1,4 +1,5 @@
 import scala.io.Source
+import scala.util.Try
 
 object Day25 {
 
@@ -15,7 +16,7 @@ object Day25 {
   case class Program(startState: Char, checksumAtStep: Long, states : Map[Char, State])
 
   // The tape is made up of linked slots
-  case class Slot(var value: Int = 0, var left: Option[Slot], var right: Option[Slot]) {
+  case class Slot(var value: Int = 0, var left: Option[Slot] = None, var right: Option[Slot] = None) {
 
     def leftMostSlot(slot: Slot) : Slot = {
 
@@ -26,6 +27,7 @@ object Day25 {
 
     }
 
+    // not stack safe
     def printTapeToRight(slot: Slot) : Unit = {
 
       println(s"${slot.value} ")
@@ -78,8 +80,141 @@ object Day25 {
   }
 
   object TuringMachine {
-    def fromInputStrings(input: List[String]) : TuringMachine = {
-      ???
+
+    def parseStartState(header: String) : Option[Char] = {
+
+      // Example: Begin in state A.
+
+      val pattern = """Begin in state ([A-Za-z]).""".r
+
+      Try {
+        val pattern(startState) = header
+
+        startState.charAt(0)
+      }.toOption
+
+    }
+
+    def parseChecksumSteps(header: String) : Option[Int] = {
+
+      // Example: Perform a diagnostic checksum after 12261543 steps.
+
+      val pattern = """Perform a diagnostic checksum after ([0-9]+) steps.""".r
+
+      Try {
+        val pattern(checksumpSteps) = header
+
+        checksumpSteps.toInt
+
+      }.toOption
+
+    }
+
+    def parseStates(input: List[String], states: Map[Char, State]) : Map[Char, State] = {
+
+      val next10Lines = input.take(10)
+      val remainingLines = input.drop(10)
+
+      /* Example
+
+          In state A:
+            If the current value is 0:
+              - Write the value 1.
+              - Move one slot to the right.
+              - Continue with state B.
+            If the current value is 1:
+              - Write the value 0.
+              - Move one slot to the left.
+              - Continue with state C.
+         */
+
+      val pattern = """
+                      |In state ([A-Za-z]+):
+                      |  If the current value is 0:
+                      |    - Write the value ([0-9]+).
+                      |    - Move one slot to the ([a-z]+).
+                      |    - Continue with state ([A-Za-z]+).
+                      |  If the current value is 1:
+                      |    - Write the value ([0-9]+).
+                      |    - Move one slot to the ([a-z]+).
+                      |    - Continue with state ([A-Za-z]+).
+                      |""".stripMargin.r
+
+
+      val tenLines = next10Lines.foldLeft("") {
+        case (acc, n) =>
+          acc ++ n ++ "\n"
+      }
+
+      val parsedState = Try {
+        val pattern(thisState, zeroWriteValue, zeroMoveDirection, zeroContinueState,
+                    oneWriteValue, oneMoveDirection, oneContinueState) = tenLines
+
+        val zeroMove = zeroMoveDirection match {
+          case "left" => Left
+          case "right" => Right
+        }
+
+        val oneMove = oneMoveDirection match {
+          case "left" => Left
+          case "right" => Right
+        }
+
+        thisState(0) -> State(Op(zeroWriteValue.toInt, zeroMove, zeroContinueState(0)), Op(oneWriteValue.toInt, oneMove, oneContinueState(0)))
+
+      }.toOption
+
+      parsedState match {
+
+        case Some(newState) if remainingLines.isEmpty =>
+          states updated (newState._1, newState._2)
+
+        case Some(newState)  =>
+          parseStates(remainingLines, states updated (newState._1, newState._2))
+
+        case None =>
+          states
+      }
+
+    }
+
+    def parseStates(input: List[String]) : Option[Map[Char, State]] = {
+
+      val states = parseStates(input, Map.empty)
+
+      if(states.isEmpty) None
+      else Some(states)
+
+    }
+
+
+    def fromInputStrings(input: List[String]) : Option[Program] = {
+
+      // The first three lines are the header
+
+      // By writing all our parse functions as returning option as well as interacting with the list using headOption
+      // we are able to do the whole thing in a for comprehension ...
+
+      val programOption = for (
+
+        header1 <- input.headOption;
+        startState <- parseStartState(header1);
+
+        rest1 = input.tail;
+        header2 <- rest1.headOption;
+        checksumSteps <- parseChecksumSteps(header2);
+
+        rest2 = rest1.tail;
+        states <- parseStates(rest2)
+
+      ) yield (startState, checksumSteps, states)
+
+      programOption.map {
+        program =>
+          Program(program._1, program._2, program._3)
+
+      }
+
     }
   }
 
@@ -88,6 +223,8 @@ object Day25 {
     // execute an operation
 
     def executeOp(op: Op) : TuringMachine = {
+
+      //println(s"In state ${currentState}")
 
       currentSlot.value = op.writeValue
 
@@ -98,9 +235,11 @@ object Day25 {
           currentSlot.left match {
 
             case Some(leftSlot) =>
+              //println("Move left - existing slot")
               TuringMachine(currentSlot = leftSlot, op.continueState, program, steps + 1)
 
             case None =>
+              //println("Move left - new slot")
               currentSlot.left = Some(Slot(0, None, Some(currentSlot)))
               TuringMachine(currentSlot = currentSlot.left.get, op.continueState, program, steps + 1)
           }
@@ -110,9 +249,11 @@ object Day25 {
           currentSlot.right match {
 
             case Some(rightSlot) =>
+              //println("Move right - existing slot")
               TuringMachine(currentSlot = rightSlot, op.continueState, program, steps + 1)
 
             case None =>
+              //println("Move right - new slot")
               currentSlot.right = Some(Slot(0, Some(currentSlot), None))
               TuringMachine(currentSlot.right.get, op.continueState, program, steps + 1)
           }
@@ -125,7 +266,7 @@ object Day25 {
     def step() : TuringMachine = {
 
       // This throws exception if we try to enter a non-existent state which is ok
-      val state = program.states.get(currentState).get
+      val state = program.states(currentState)
 
       // Execute the states op depending on if it is zero or one at current tape slot
       val currentValue = currentSlot.value
@@ -137,21 +278,23 @@ object Day25 {
 
     def runAllStepsGetCount() : Int = {
 
-      def nextStep(machine: TuringMachine) : TuringMachine = {
+      def runStep(machine: TuringMachine) : TuringMachine = {
+
+        //println(s"step ${machine.steps}")
 
         if(machine.steps == program.checksumAtStep) machine
         else {
           val nextMachine = machine.step()
-          nextStep(nextMachine)
+          runStep(nextMachine)
         }
 
       }
 
-      val finalMachine = nextStep(this)
+      val finalMachine = runStep(this)
 
-      finalMachine.currentSlot.printTape()
+      //finalMachine.currentSlot.printTape()
 
-      finalMachine.currentSlot.count
+      finalMachine.currentSlot.count()
     }
 
 
@@ -159,7 +302,7 @@ object Day25 {
 
   // Sample program
 
-  val sampleStates = Map [Char, State] (
+  val sampleStates : Map[Char, State] = Map (
     'a' -> State(Op(1, Right, 'b'), Op(0, Left, 'b')),
     'b' -> State(Op(1, Left, 'a'), Op(1, Right, 'a')))
 
@@ -168,17 +311,21 @@ object Day25 {
 
   def main(args : Array[String]) : Unit = {
 
-    val sample1 = TuringMachine(Slot(0, None, None), 'a', Program('a', 6, sampleStates))
+    val sample1 = TuringMachine(Slot(), 'a', Program('a', 6, sampleStates))
 
     val checkSumSample1 = sample1.runAllStepsGetCount()
 
     println(s"checksum sample1 = $checkSumSample1")
 
-    val inputLines: List[String] = Source.fromResource("input12.txt").getLines.toList
+    val inputLines: List[String] = Source.fromResource("input25.txt").getLines.toList
 
     val step1 = TuringMachine.fromInputStrings(inputLines)
 
+    val step1TuringMachine = TuringMachine(Slot(), step1.get.startState, step1.get)
 
+    val step1Result = step1TuringMachine.runAllStepsGetCount()
+
+    println(s"checksum step1 = $step1Result")
 
   }
 
