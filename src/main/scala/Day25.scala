@@ -1,3 +1,4 @@
+import scala.io.Source
 
 object Day25 {
 
@@ -74,6 +75,12 @@ object Day25 {
 
     }
 
+  }
+
+  object TuringMachine {
+    def fromInputStrings(input: List[String]) : TuringMachine = {
+      ???
+    }
   }
 
   case class TuringMachine(currentSlot: Slot, currentState: Char, program: Program, steps : Int = 0) {
@@ -161,13 +168,16 @@ object Day25 {
 
   def main(args : Array[String]) : Unit = {
 
-    println("Turing!")
-
     val sample1 = TuringMachine(Slot(0, None, None), 'a', Program('a', 6, sampleStates))
 
     val checkSumSample1 = sample1.runAllStepsGetCount()
 
     println(s"checksum sample1 = $checkSumSample1")
+
+    val inputLines: List[String] = Source.fromResource("input12.txt").getLines.toList
+
+    val step1 = TuringMachine.fromInputStrings(inputLines)
+
 
 
   }
