@@ -156,9 +156,14 @@ object Day16 {
 
     val commands: Stream[Pure, DanceMove] = splitOnCommas.map{DanceMove.fromString(_)}
 
-    val endOfTheWorld = commands.toList
+    val finalPositions: Stream[Pure, Vector[Char]] = commands.fold(Vector('a','b','c','d','e')) {
+      case (dancers, move) =>
+        DanceMove.doMove(move, dancers)
+    }
 
-    // test moves
+    val endOfTheWorld = finalPositions.toList.head
+
+    // test moves individually
 
     val spinTest = DanceMove.doMove(Spin(1), Vector('a','b','c','d','e'))
     assert(spinTest == Vector('e','a','b','c','d'))
@@ -173,7 +178,7 @@ object Day16 {
 
     println("day 16 answer for step 1")
 
-    
+
 
   }
 
