@@ -6,6 +6,7 @@ import cats.instances.all
 import cats.implicits._
 import com.sun.org.omg.CORBA.ExcDescriptionSeqHelper
 
+import scala.io.Source
 import scala.util.Try
 
 /**
@@ -132,7 +133,6 @@ object Day16 {
         case Partner(a,b) =>
           val positionOfA = dancers.indexOf(a)
           val positionOfB = dancers.indexOf(b)
-
           execute(Exchange(positionOfA, positionOfB), dancers)
 
       }
@@ -170,7 +170,7 @@ object Day16 {
     val sample = "s1,x3/4,pe/b"
 
     val danceResult = DanceMove.executeDance(Vector('a','b','c','d','e'), sample)
-    assert(danceResult == Vector('b','a','e','c','d'))
+    assert(danceResult == Vector('b','a','e','d','c'))
 
     // test moves individually
 
@@ -180,38 +180,28 @@ object Day16 {
     val exchangeTest = DanceMove.execute(Exchange(3,4), Vector('e','a','b','c','d'))
     assert(exchangeTest == Vector('e','a','b','d','c'))
 
-    val partnerTest = DanceMove.execute(Partner('e','b'), Vector('e','a','b','c','d'))
-    assert(partnerTest == Vector('b','a','e','c','d'))
+    val partnerTest = DanceMove.execute(Partner('e','b'), Vector('e','a','b','d','c'))
+    assert(partnerTest == Vector('b','a','e','d','c'))
 
     val step1Dancers = Vector('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p')
 
-    println("day 16 answer for step 1")
+    val step1Input = Source.fromResource("input16.txt").mkString
 
+    val step1 = DanceMove.executeDance(step1Dancers, step1Input)
 
+    println(s"day 16 answer for step 1 ${step1.mkString}")
+
+    // step 2 is to do this 1 billion times
+
+    val step2 = (1 to 1000000000).foldLeft(step1Dancers) {
+
+      case (dancers, n) =>
+        if(n % 100 == 0) println(s"n = $n")
+        DanceMove.executeDance(dancers, step1Input)
+    }
+
+    println(s"day 16 answer for step 2 ${step2.mkString}")
 
   }
 
 }
-
-/*
-import cats.effect.{IO, Sync}
-import fs2.{io, text}
-import java.nio.file.Paths
-
-def fahrenheitToCelsius(f: Double): Double =
-  (f - 32.0) * (5.0/9.0)
-
-def converter[F[_]](implicit F: Sync[F]): F[Unit] =
-  io.file.readAll[F](Paths.get("testdata/fahrenheit.txt"), 4096)
-    .through(text.utf8Decode)
-    .through(text.lines)
-    .filter(s => !s.trim.isEmpty && !s.startsWith("//"))
-    .map(line => fahrenheitToCelsius(line.toDouble).toString)
-    .intersperse("\n")
-    .through(text.utf8Encode)
-    .through(io.file.writeAll(Paths.get("testdata/celsius.txt")))
-    .compile.drain
-
-// at the end of the universe...
-val u: Unit = converter[IO].unsafeRunSync()
-*/
