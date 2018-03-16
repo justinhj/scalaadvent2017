@@ -112,8 +112,8 @@ object Day16 {
 
     }
 
-    // Executes the moves
-    def doMove(dm : DanceMove, dancers: Vector[Char]) : Vector[Char] = {
+    // Execute a move
+    def execute(dm : DanceMove, dancers: Vector[Char]) : Vector[Char] = {
 
       dm match {
         // Spin, written sX, makes X programs move from the end to the front, but maintain their order otherwise. (For
@@ -133,9 +133,33 @@ object Day16 {
           val positionOfA = dancers.indexOf(a)
           val positionOfB = dancers.indexOf(b)
 
-          doMove(Exchange(positionOfA, positionOfB), dancers)
+          execute(Exchange(positionOfA, positionOfB), dancers)
 
       }
+
+    }
+
+    def executeDance(startPositions : Vector[Char], moves: String) : Vector[Char] = {
+
+      // read the input
+      // delimit by comma
+      // turn each string into a command
+      // apply the commands to the start input
+
+      val input: Stream[Pure, String] = Stream.emit(moves)
+
+      val splitOnCommas: Stream[Pure, String] = input.repartition{ s => Chunk.array(s.split(","))}
+
+      val commands: Stream[Pure, DanceMove] = splitOnCommas.map{in => DanceMove.fromString(in)}
+
+      val temp = commands.toList
+
+      val finalPositions: Stream[Pure, Vector[Char]] = commands.fold(startPositions) {
+        case (dancers, move) =>
+          DanceMove.execute(move, dancers)
+      }
+
+      finalPositions.toList.head
 
     }
 
@@ -145,33 +169,18 @@ object Day16 {
 
     val sample = "s1,x3/4,pe/b"
 
-    // read the input
-    // delimit by comma
-    // turn each string into a command
-    // apply the commands to the start input
-
-    val input: Stream[Pure, String] = Stream.emit(sample)
-
-    val splitOnCommas: Stream[Pure, String] = input.repartition{ s => Chunk.array(s.split(","))}
-
-    val commands: Stream[Pure, DanceMove] = splitOnCommas.map{DanceMove.fromString(_)}
-
-    val finalPositions: Stream[Pure, Vector[Char]] = commands.fold(Vector('a','b','c','d','e')) {
-      case (dancers, move) =>
-        DanceMove.doMove(move, dancers)
-    }
-
-    val endOfTheWorld = finalPositions.toList.head
+    val danceResult = DanceMove.executeDance(Vector('a','b','c','d','e'), sample)
+    assert(danceResult == Vector('b','a','e','c','d'))
 
     // test moves individually
 
-    val spinTest = DanceMove.doMove(Spin(1), Vector('a','b','c','d','e'))
+    val spinTest = DanceMove.execute(Spin(1), Vector('a','b','c','d','e'))
     assert(spinTest == Vector('e','a','b','c','d'))
 
-    val exchangeTest = DanceMove.doMove(Exchange(3,4), Vector('e','a','b','c','d'))
+    val exchangeTest = DanceMove.execute(Exchange(3,4), Vector('e','a','b','c','d'))
     assert(exchangeTest == Vector('e','a','b','d','c'))
 
-    val partnerTest = DanceMove.doMove(Partner('e','b'), Vector('e','a','b','c','d'))
+    val partnerTest = DanceMove.execute(Partner('e','b'), Vector('e','a','b','c','d'))
     assert(partnerTest == Vector('b','a','e','c','d'))
 
     val step1Dancers = Vector('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p')
