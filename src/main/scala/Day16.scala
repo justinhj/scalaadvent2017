@@ -193,15 +193,88 @@ object Day16 {
 
     // step 2 is to do this 1 billion times
 
-    val step2 = (1 to 1000000000).foldLeft(step1Dancers) {
+    // It takes about 1 second to do 100 so it will take 115 days to complete
 
-      case (dancers, n) =>
-        if(n % 100 == 0) println(s"n = $n")
-        DanceMove.executeDance(dancers, step1Input)
+//    val step2 = (1 to 1000000000).foldLeft(step1Dancers) {
+//
+//      case (dancers, n) =>
+//        if(n % 100 == 0) println(s"n = $n")
+//        DanceMove.executeDance(dancers, step1Input)
+//    }
+
+    // We can first consider that the long sequence of moves can be
+    // compressed to the smallest set of moves to get from the start position to the end position
+
+    val step1Final = Vector('b','k','g','c','d','e','f','i','h','o','l','n','p','m','j','a')
+
+    // Algorithm
+    // Step from left to right
+    // If the element at current position is not in its start position generate an Exchange command to move it there
+    // Result is a list of Exchanges
+
+    // What is the correct position of a character? Its ascii value - the ascii value of 'a'
+//    def getPosition(c: Char) : Int = {
+//      val aVal = 'a'.toInt
+//
+//      c.toInt - aVal
+//    }
+
+    // Find the original index of this character
+//    def getOriginIndex(start: Vector[Char], c: Char) : Int = {
+//      start.indexOf(c)
+//    }
+
+    def generateDeltas(start: Vector[Char], end: Vector[Char]) : Vector[Int] = {
+
+      end.zipWithIndex.map {
+
+        case (c, index) =>
+
+          val whatShouldBeHere = start(index)
+
+          val whereItIs = end.indexOf(whatShouldBeHere)
+
+          whereItIs - index
+      }
     }
 
-    println(s"day 16 answer for step 2 ${step2.mkString}")
+    val exchanges = generateDeltas(step1Dancers, step1Final)
+
+    def fastDance(start: Vector[Char], exchanges: Vector[Int]) : Vector[Char] = {
+
+      start.foldLeft(Vector.empty[Char]) {
+        case (acc, c) =>
+
+          ???
+
+
+      }
+
+
+    }
+
+
+    var babe = "asiancutebaberighthere!"
+    var andnow = "dirtycuntedhotblackwomanyeah"
+
+    //println(s"day 16 answer for step 2 ${step2.mkString}")
 
   }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
