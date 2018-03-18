@@ -33,16 +33,25 @@ standing after their dance?
 
   */
 
-object Day16 {
+object Day16FS {
 
 //  Spin, written sX, makes X programs move from the end to the front, but maintain their order otherwise. (For
 //    example, s3 on abcde produces cdeab).
 //    Exchange, written xA/B, makes the programs at positions A and B swap places.
 //  Partner, written pA/B, makes the programs named A and B swap places.
 
-  trait DanceMove
+  trait DanceMove {
+    def execute(dancers: Vector[Char]) : Vector[Char]
+  }
 
-  case class Spin(len: Int) extends DanceMove
+  case class Spin(len: Int) extends DanceMove {
+
+    def execute(dancers: Vector[Char]) : Vector[Char] = {
+      val spinCount = dancers.size - len
+      dancers.drop(spinCount) ++ dancers.take(spinCount)
+    }
+
+  }
 
   object Spin {
     def fromString(s: String) : Option[DanceMove] = {
@@ -58,7 +67,13 @@ object Day16 {
     }
   }
 
-  case class Exchange(a: Int, b: Int) extends DanceMove
+  case class Exchange(a: Int, b: Int) extends DanceMove {
+    def execute(dancers: Vector[Char]) : Vector[Char] = {
+      val elementAtA = dancers(a)
+      val elementAtB = dancers(b)
+      dancers.updated(a, elementAtB).updated(b, elementAtA)
+    }
+  }
 
   object Exchange {
     def fromString(s: String) : Option[DanceMove] = {
@@ -74,7 +89,13 @@ object Day16 {
     }
   }
 
-  case class Partner(a: Char, b : Char) extends DanceMove
+  case class Partner(a: Char, b : Char) extends DanceMove {
+    def execute(dancers: Vector[Char]) : Vector[Char] = {
+      val positionOfA = dancers.indexOf(a)
+      val positionOfB = dancers.indexOf(b)
+      Exchange(positionOfA, positionOfB).execute(dancers)
+    }
+  }
 
   object Partner {
     def fromString(s: String) : Option[DanceMove] = {
@@ -109,32 +130,6 @@ object Day16 {
 
     }
 
-    // Execute a move
-    def execute(dm : DanceMove, dancers: Vector[Char]) : Vector[Char] = {
-
-      dm match {
-        // Spin, written sX, makes X programs move from the end to the front, but maintain their order otherwise. (For
-        // example, s3 on abcde produces cdeab).
-        case Spin(len) =>
-          val spinCount = dancers.size - len
-          dancers.drop(spinCount) ++ dancers.take(spinCount)
-
-        // Exchange, written xA/B, makes the programs at positions A and B swap places.
-        case Exchange(a,b) =>
-          val elementAtA = dancers(a)
-          val elementAtB = dancers(b)
-          dancers.updated(a, elementAtB).updated(b, elementAtA)
-
-        //Partner, written pA/B, makes the programs named A and B swap places.
-        case Partner(a,b) =>
-          val positionOfA = dancers.indexOf(a)
-          val positionOfB = dancers.indexOf(b)
-          execute(Exchange(positionOfA, positionOfB), dancers)
-
-      }
-
-    }
-
     def executeDance(startPositions : Vector[Char], moves: String) : Vector[Char] = {
 
       // read the input
@@ -148,11 +143,9 @@ object Day16 {
 
       val commands: Stream[Pure, DanceMove] = splitOnCommas.map{in => DanceMove.fromString(in)}
 
-      val temp = commands.toList
-
       val finalPositions: Stream[Pure, Vector[Char]] = commands.fold(startPositions) {
         case (dancers, move) =>
-          DanceMove.execute(move, dancers)
+          move.execute(dancers)
       }
 
       finalPositions.toList.head
@@ -170,13 +163,13 @@ object Day16 {
 
     // test moves individually
 
-    val spinTest = DanceMove.execute(Spin(1), Vector('a','b','c','d','e'))
+    val spinTest = Spin(1).execute(Vector('a','b','c','d','e'))
     assert(spinTest == Vector('e','a','b','c','d'))
 
-    val exchangeTest = DanceMove.execute(Exchange(3,4), Vector('e','a','b','c','d'))
+    val exchangeTest = Exchange(3,4).execute(Vector('e','a','b','c','d'))
     assert(exchangeTest == Vector('e','a','b','d','c'))
 
-    val partnerTest = DanceMove.execute(Partner('e','b'), Vector('e','a','b','d','c'))
+    val partnerTest = Partner('e','b').execute(Vector('e','a','b','d','c'))
     assert(partnerTest == Vector('b','a','e','d','c'))
 
     val step1Dancers = Vector('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p')
