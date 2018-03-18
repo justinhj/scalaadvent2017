@@ -1,6 +1,6 @@
 object Play1 {
 
-    // Implement functor and monad for list
+    // Implement abstract functor and monad
 
     trait Functor[F[_]] {
         def map[A,B](fa: F[A], fab : A => B): F[B]
@@ -11,7 +11,27 @@ object Play1 {
         def pure[A](a: A): F[A]
 
         def flatMap[A,B](v : F[A], f : A => F[B]) : F[B]
+
+        // A Monad can implement map in terms of pure and flatmap
+
+        def map[A,B](fa: F[A], fab : A => B): F[B] = {
+          flatMap[A,B](fa, a => pure(fab(a)))
+        }
       
+    }
+
+    // Implement for Option
+
+    class OptionMonad extends Monad[Option] {
+
+      def pure[A](a: A) = Some(a)
+
+      def flatMap[A, B](v: Option[A], f: A => Option[B]) = {
+
+        v.map(f).flatten
+
+      }
+
     }
 
     // Implement for list
@@ -21,17 +41,10 @@ object Play1 {
         def pure[A](a: A) = List(a)
 
         def flatMap[A, B](v: List[A], f: A => List[B]) = {
-
             v.map(f).flatten
-
         }
 
-        def map[A,B](fa: List[A], fab : A => B): List[B] = {
 
-            val what = flatMap[A,B](fa, a => pure(fab(a)))
-
-            what
-        }
     }
 
     val lm = new ListMonad
@@ -46,8 +59,29 @@ object Play1 {
 
     val out = lm.flatMap(tl, testF)
 
+    val to = Some(10)
+    val to2 = Some(11)
+
+    // A function that takes an int as a param and returns an option double
+
+    def testO(a: Int) : Option[Double] = {
+      if(a > 10) Some(a + 0.5 * a)
+      else None
+    }
+
+    // apply it
+
+    val om = new OptionMonad
+
+    val ao = om.flatMap(to, testO)
+    val ao2 = om.flatMap(to2, testO)
+
+
     def main(args: Array[String]) : Unit = {
-        println(out) 
+      println(s"ao = $ao")
+      println(s"ao2 = $ao2")
+
+      println(s"out = $out")
     }
   
 }
