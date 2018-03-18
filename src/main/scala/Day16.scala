@@ -1,10 +1,6 @@
 
-import cats.Eval
-import cats.effect.IO
-import fs2.{Chunk, Pure, Stream, text}
-import cats.instances.all
 import cats.implicits._
-import com.sun.org.omg.CORBA.ExcDescriptionSeqHelper
+import fs2.{Chunk, Pure, Stream}
 
 import scala.io.Source
 import scala.util.Try
@@ -193,76 +189,108 @@ object Day16 {
 
     // step 2 is to do this 1 billion times
 
-    // It takes about 1 second to do 100 so it will take 115 days to complete
+    // It takes about 1 second to do 100 so it will take 115 days to complete!
 
-//    val step2 = (1 to 1000000000).foldLeft(step1Dancers) {
-//
-//      case (dancers, n) =>
-//        if(n % 100 == 0) println(s"n = $n")
-//        DanceMove.executeDance(dancers, step1Input)
-//    }
+    // So what if it loops periodically? I'm not sure if any input of rules is guaranteed to loop since there
+    // are 16! different dance positions (20,922,789,888,000)
+    // If it was possible to use the dance moves to generate all the combinations it could easily exceed
+    // 1b, (not sure if it is or not)
+    // Anyway let's just empirically find a loop ...
+    
+    val step2 = (1 to 40).foldLeft(step1Dancers) {
 
-    // We can first consider that the long sequence of moves can be
-    // compressed to the smallest set of moves to get from the start position to the end position
+      case (dancers, n) =>
 
-    val step1Final = Vector('b','k','g','c','d','e','f','i','h','o','l','n','p','m','j','a')
+        val nextStep = DanceMove.executeDance(dancers, step1Input)
 
-    // Algorithm
-    // Step from left to right
-    // If the element at current position is not in its start position generate an Exchange command to move it there
-    // Result is a list of Exchanges
+        if(n % 100 == 0) println(s"n = $n")
 
-    // What is the correct position of a character? Its ascii value - the ascii value of 'a'
+        if(nextStep == step1Dancers) println(s"start repeated at $n")
+
+        nextStep
+
+    }
+
+    // the nearest multiple of 60 to 1b is 999,999,960
+
+    // so we can start there and run 40 more times to get the answer
+
+    /// now we can simply start at the multiple before 1 billion
+
+    // knmdfoijcbpghlea
+
+    println(s"day 16 answer for step 2 ${step2.mkString}")
+
+  }
+
+}
+
+/*
+What follows is a flawed solution but I've left it here like a fossil of thought...
+
+I assumed I could speed the dance up by calculating the delta each dancer went through between each dance
+so we could run through the dance program much faster.
+
+Why is this flaws? Well each dancer will go through a different path because of the partner step that
+swaps elements by name not position.
+
+This technique did reduce the runtime from 115 days to 15 minutes, but sadly is not the correct answer.
+
+
+ */
+
+// What is the correct position of a character? Its ascii value - the ascii value of 'a'
 //    def getPosition(c: Char) : Int = {
 //      val aVal = 'a'.toInt
 //
 //      c.toInt - aVal
 //    }
 
-    // Find the original index of this character
+// Find the original index of this character
 //    def getOriginIndex(start: Vector[Char], c: Char) : Int = {
 //      start.indexOf(c)
 //    }
 
-    def generateDeltas(start: Vector[Char], end: Vector[Char]) : Vector[Int] = {
+// This is flawed, doesn't take into account partner swaps
 
-      end.zipWithIndex.map {
+//    def generateDeltas(start: Vector[Char], end: Vector[Char]) : Vector[Int] = {
+//
+//      end.zipWithIndex.map {
+//
+//        case (c, index) =>
+//
+//          val whatShouldBeHere = start(index)
+//
+//          val whereItIs = end.indexOf(whatShouldBeHere)
+//
+//          whereItIs - index
+//      }
+//    }
 
-        case (c, index) =>
+//val exchanges = generateDeltas(step1Dancers, step1Final)
 
-          val whatShouldBeHere = start(index)
+// rebuild the dance with the final exchanges
 
-          val whereItIs = end.indexOf(whatShouldBeHere)
-
-          whereItIs - index
-      }
-    }
-
-    val exchanges = generateDeltas(step1Dancers, step1Final)
-
-    def fastDance(start: Vector[Char], exchanges: Vector[Int]) : Vector[Char] = {
-
-      start.foldLeft(Vector.empty[Char]) {
-        case (acc, c) =>
-
-          ???
-
-
-      }
-
-
-    }
-
-
-    var babe = "asiancutebaberighthere!"
-    var andnow = "dirtycuntedhotblackwomanyeah"
-
-    //println(s"day 16 answer for step 2 ${step2.mkString}")
-
-  }
-
-}
-
+//    def fastDance(start: Vector[Char], exchanges: Vector[Int]) : Vector[Char] = {
+//
+//      start.zipWithIndex.foldLeft(start) {
+//        case (acc, (c, index)) =>
+//
+//          acc.updated(index + exchanges(index), c)
+//      }
+//
+//
+//    }
+//
+//
+//    val testFastDance = fastDance(step1Dancers, exchanges)
+//
+//    val step2: Vector[Char] = (1 to 1000000000).foldLeft(step1Dancers) {
+//
+//      case (dancers, n) =>
+//        if(n % 1000000 == 0) println(s"n = $n")
+//        fastDance(dancers, exchanges)
+//    }
 
 
 
