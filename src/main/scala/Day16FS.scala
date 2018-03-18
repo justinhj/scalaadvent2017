@@ -2,6 +2,8 @@
 import cats.implicits._
 import fs2.{Chunk, Pure, Stream}
 
+import scala.language.higherKinds
+
 import scala.io.Source
 import scala.util.Try
 
@@ -130,12 +132,7 @@ object Day16FS {
 
     }
 
-    def executeDance(startPositions : Vector[Char], moves: String) : Vector[Char] = {
-
-      // read the input
-      // delimit by comma
-      // turn each string into a command
-      // apply the commands to the start input
+    def inputMovesToCommands(moves: String): Stream[Pure, DanceMove] = {
 
       val input: Stream[Pure, String] = Stream.emit(moves)
 
@@ -143,7 +140,20 @@ object Day16FS {
 
       val commands: Stream[Pure, DanceMove] = splitOnCommas.map{in => DanceMove.fromString(in)}
 
-      val finalPositions: Stream[Pure, Vector[Char]] = commands.fold(startPositions) {
+      commands
+    }
+
+    def executeDance(startPositions : Vector[Char], moves: String) : Vector[Char] = {
+
+      // read the input
+      // delimit by comma
+      // turn each string into a command
+      // apply the commands to the start input
+      // repeat with output dancers repeat times
+
+      val commands = inputMovesToCommands(moves)
+
+      val finalPositions = commands.fold(startPositions) {
         case (dancers, move) =>
           move.execute(dancers)
       }
