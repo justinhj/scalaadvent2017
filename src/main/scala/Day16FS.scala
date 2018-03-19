@@ -143,7 +143,26 @@ object Day16FS {
       commands
     }
 
-    def executeDance(startPositions : Vector[Char], moves: String) : Vector[Char] = {
+    // Fold over the input stream n times using the init value for the first fold
+    // and then the output of the fold for the remainder
+
+    def foldN[F[_], A, B](n: Int, init: A, str: Stream[F, B])(op: (A, B) => A): Stream[F, A] = {
+
+      def rec(remain: Int, init: Stream[F, A]): Stream[F, A] = {
+
+        if (remain <= 0)
+          init
+        else {
+          val folded = init.flatMap(a => str.fold(a)(op))
+          rec(remain - 1, folded)
+        }
+      }
+
+      rec(n, Stream.emit(init))
+
+    }
+
+    def executeDance(startPositions : Vector[Char], moves: String, repeat: Int = 1) : Vector[Char] = {
 
       // read the input
       // delimit by comma
@@ -153,7 +172,7 @@ object Day16FS {
 
       val commands = inputMovesToCommands(moves)
 
-      val finalPositions = commands.fold(startPositions) {
+      val finalPositions = foldN(repeat, startPositions, commands) {
         case (dancers, move) =>
           move.execute(dancers)
       }
@@ -199,20 +218,26 @@ object Day16FS {
     // If it was possible to use the dance moves to generate all the combinations it could easily exceed
     // 1b, (not sure if it is or not)
     // Anyway let's just empirically find a loop ...
-    
-    val step2 = (1 to 40).foldLeft(step1Dancers) {
 
-      case (dancers, n) =>
+    val step2 = DanceMove.executeDance(step1Dancers, step1Input, 40)
 
-        val nextStep = DanceMove.executeDance(dancers, step1Input)
+    // Previous line uses foldN to execute the dance steps 40 times
 
-        if(n % 100 == 0) println(s"n = $n")
+    // Commented out section is the initial code used to find the repeat count...
 
-        if(nextStep == step1Dancers) println(s"start repeated at $n")
-
-        nextStep
-
-    }
+//    val step2 = (1 to 40).foldLeft(step1Dancers) {
+//
+//      case (dancers, n) =>
+//
+//        val nextStep = DanceMove.executeDance(dancers, step1Input)
+//
+//        if(n % 100 == 0) println(s"n = $n")
+//
+//        if(nextStep == step1Dancers) println(s"start repeated at $n")
+//
+//        nextStep
+//
+//    }
 
     // the nearest multiple of 60 to 1b is 999,999,960
 
