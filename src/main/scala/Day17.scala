@@ -51,7 +51,40 @@ object Day17 {
 
     println(step1CB.buffer(step1CB.currentPos + 1))
 
+    val step2CB = CircularBuffer(369)
 
+    val seconds = (1 to 2000).map {
+      n =>
+        step2CB.insertNext(n)
+        step2CB.buffer(1)
+    }
+
+    println(s"seconds $seconds")
+
+    val nMap = seconds.foldLeft(scala.collection.immutable.SortedMap.empty[Int,Int]) {
+      case (acc, n) =>
+        val count = acc.getOrElse(n, 0)
+        acc updated (n, count + 1)
+    }
+
+    nMap.foreach {
+      case (key,value) =>
+        println(s"n $key count $value")
+
+    }
+
+    // This is too slow to brute force so the idea must be to predict the element at (1)
+    // Note that the element at position 1 only changes when current pos is at 1
+    // and maybe that's predictable because it's a function of the growing size of the
+    // circular buffer and when it does change it will be equal to the new current position
+
+    // so you need a calculation for modulo over a linear increasing size
+
+
+
+    //val counts = seconds.
+
+    //println(s"Buffer $buffer")
   }
 }
 
