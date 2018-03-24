@@ -50,14 +50,14 @@ object Day17 {
 
     println(step1CB.buffer(step1CB.currentPos + 1))
 
-    //val step2CB = CircularBuffer(369)
-
-//    val seconds = (1 to 2000).map {
+//    val step2CB = CircularBuffer(369)
+//
+//    val seconds = (1 to 50000000).map {
 //      n =>
 //        step2CB.insertNext(n)
 //        step2CB.buffer(1)
 //    }
-//
+
 //    println(s"seconds $seconds")
 //
 //    val nMap = seconds.foldLeft(scala.collection.immutable.SortedMap.empty[Int,Int]) {
@@ -113,13 +113,9 @@ object Day17 {
         val newLen = len + 1
         val newCurPos = (curpos + steps) % len + 1
 
-        if(n % 1000000 == 0) println(n)
-
-        //println(s"len $newLen curpos $newCurPos n $n")
-
+        // If we are at position 1 record n as the last position 1 seen
         val newPos1 =
           if(newCurPos == 1) {
-            //println(s"new at position 1 is $n")
             n
           }
           else pos1
@@ -128,7 +124,7 @@ object Day17 {
 
     }
 
-    println(s"result $result")
+    println(s"step 2 answer is ${result._2}")
 
     // result (50000001,39644617,31154878)
 
