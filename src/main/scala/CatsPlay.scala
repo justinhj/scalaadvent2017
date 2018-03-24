@@ -5,9 +5,9 @@ object CatsPlay {
   import cats.Monad
   import cats.implicits._
   import cats.Semigroupal
-  import cats.Cartesian
   import cats.data.Validated
   import cats.instances.list._
+  import cats.syntax.validated
 
   // Two ways to create the cartesian product function which relates to monoidal append except for two contexts
 
@@ -50,14 +50,11 @@ object CatsPlay {
 
     println(s"product2 $product2")
 
-    type AllErrorsOr[A] = Either[List[String], A]
-
-    //val checkit = Cartesian[AllErrorsOr].product(Validated.invalid[List[String], Int](List("Oh dear")), Validated.invalid[List[String], Int](List("Oops", "Oh no")))
-
-    Cartesian[AllErrorsOr].product(
-      Validated.invalid(List("Error 1")),
-      Validated.invalid(List("Error 2"))
-    )
+    type AllErrorsOr[A] = Validated[List[String], A]
+//
+//    Semigroupal[AllErrorsOr].product(
+//      List("Error 1").invalid[Int],
+//      List("Error 2").invalid[Int])
 
     var x = 1
 

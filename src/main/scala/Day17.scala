@@ -1,8 +1,8 @@
-import scala.collection.mutable
+
 
 object Day17 {
 
-  case class CircularBuffer(val stepSize : Int, var buffer : Vector[Int] = Vector(0), var currentPos : Int = 0) {
+  case class CircularBuffer(stepSize : Int, var buffer : Vector[Int] = Vector(0), var currentPos : Int = 0) {
 
     def insertNext(next: Int) : Unit = {
 
@@ -19,8 +19,6 @@ object Day17 {
   }
 
   def main(args: Array[String]): Unit = {
-
-
 
     val cb = CircularBuffer(3)
 
@@ -46,32 +44,33 @@ object Day17 {
     (1 to 2017).foreach {
       n =>
         step1CB.insertNext(n)
-        //println(step1CB.buffer)
+//        println(s"len ${step1CB.buffer.size} pos ${step1CB.currentPos} n $n")
+//        if(step1CB.currentPos == 1) println(s"new at position 1 is ${step1CB.buffer(1)}")
     }
 
     println(step1CB.buffer(step1CB.currentPos + 1))
 
-    val step2CB = CircularBuffer(369)
+    //val step2CB = CircularBuffer(369)
 
-    val seconds = (1 to 2000).map {
-      n =>
-        step2CB.insertNext(n)
-        step2CB.buffer(1)
-    }
-
-    println(s"seconds $seconds")
-
-    val nMap = seconds.foldLeft(scala.collection.immutable.SortedMap.empty[Int,Int]) {
-      case (acc, n) =>
-        val count = acc.getOrElse(n, 0)
-        acc updated (n, count + 1)
-    }
-
-    nMap.foreach {
-      case (key,value) =>
-        println(s"n $key count $value")
-
-    }
+//    val seconds = (1 to 2000).map {
+//      n =>
+//        step2CB.insertNext(n)
+//        step2CB.buffer(1)
+//    }
+//
+//    println(s"seconds $seconds")
+//
+//    val nMap = seconds.foldLeft(scala.collection.immutable.SortedMap.empty[Int,Int]) {
+//      case (acc, n) =>
+//        val count = acc.getOrElse(n, 0)
+//        acc updated (n, count + 1)
+//    }
+//
+//    nMap.foreach {
+//      case (key,value) =>
+//        println(s"n $key count $value")
+//
+//    }
 
     // This is too slow to brute force so the idea must be to predict the element at (1)
     // Note that the element at position 1 only changes when current pos is at 1
@@ -80,11 +79,59 @@ object Day17 {
 
     // so you need a calculation for modulo over a linear increasing size
 
+    /*Vector(0, [1])
+      Vector(0, [2], 1)
+      Vector(0, [2], 3, 1)
+      Vector(0, 2, 3, 1, 4)
+      Vector(0, 2, 3, 1, 5, 4)
+      Vector(0, 2, 6, 3, 1, 5, 4)
+      Vector(0, 7, 2, 6, 3, 1, 5, 4)
+      Vector(0, 7, 2, 8, 6, 3, 1, 5, 4)
+      Vector(0, 7, 2, 8, 9, 6, 3, 1, 5, 4)
+      Vector(0, 7, 2, 8, 10, 9, 6, 3, 1, 5, 4)
+      Vector(0, 7, 2, 8, 10, 9, 6, 3, 1, 5, 4, 11)
+      Vector(0, 7, 2, 8, 10, 9, 6, 3, 1, 12, 5, 4, 11)
+      Vector(0, 7, 13, 2, 8, 10, 9, 6, 3, 1, 12, 5, 4, 11)
+      Vector(0, 7, 13, 2, 8, 10, 9, 6, 14, 3, 1, 12, 5, 4, 11)
+      Vector(0, 7, 13, 15, 2, 8, 10, 9, 6, 14, 3, 1, 12, 5, 4, 11)
+      Vector(0, 7, 13, 15, 2, 16, 8, 10, 9, 6, 14, 3, 1, 12, 5, 4, 11)
+      Vector(0, 17, 7, 13, 15, 2, 16, 8, 10, 9, 6, 14, 3, 1, 12, 5, 4, 11)
+      Vector(0, 17, 7, 13, 15, 2, 16, 8, 10, 9, 6, 18, 14, 3, 1, 12, 5, 4, 11)
+      Vector(0, 19, 17, 7, 13, 15, 2, 16, 8, 10, 9, 6, 18, 14, 3, 1, 12, 5, 4, 11)
+      Vector(0, 19, 17, 7, 13, 15, 2, 16, 8, 10, 9, 20, 6, 18, 14, 3, 1, 12, 5, 4, 11) */
 
 
-    //val counts = seconds.
+    val steps = 369
 
-    //println(s"Buffer $buffer")
+    // need to iterate storing current length of buffer (increases by one each time) and current position (modulo
+    // arithmetic. this takes a few seconds to get the right answer
+
+    val result = (1 to 50000000).foldLeft((1, 0, 0)) {
+
+      case ((len, curpos, pos1), n) =>
+
+        val newLen = len + 1
+        val newCurPos = (curpos + steps) % len + 1
+
+        if(n % 1000000 == 0) println(n)
+
+        //println(s"len $newLen curpos $newCurPos n $n")
+
+        val newPos1 =
+          if(newCurPos == 1) {
+            //println(s"new at position 1 is $n")
+            n
+          }
+          else pos1
+
+        (newLen, newCurPos, newPos1)
+
+    }
+
+    println(s"result $result")
+
+    // result (50000001,39644617,31154878)
+
   }
 }
 
