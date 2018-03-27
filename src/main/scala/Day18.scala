@@ -15,11 +15,36 @@ object Day18 {
                              |set a 1
                              |jgz a -2""".stripMargin
 
-  trait Instruction
+  trait Instruction {
+    def op(m : Machine) : Machine
+  }
 
   type Reg = Char
 
-  case class Snd(r: Reg) extends Instruction
+  case class Machine(regs : Map[Reg, Int], lastSound : Int) {
+
+    def get(reg: Reg): Int = regs.getOrElse(reg, 0)
+
+    def set(reg: Reg, value: Int) : Machine = {
+
+      this.copy(regs = regs updated (reg, value))
+
+    }
+
+    def set(reg: Reg, reg2: Reg) : Machine = {
+
+      val value = get(reg2)
+      this.copy(regs = regs updated (reg, value))
+
+    }
+
+  }
+
+  case class Snd(r: Reg) extends Instruction {
+    def op(m: Machine) = {
+      m.copy(lastSound = m.get(r))
+    }
+  }
 
   object Snd {
     def fromString(s: String) : Option[Snd] = {
@@ -31,7 +56,11 @@ object Day18 {
     }
   }
 
-  case class SetV(r: Reg, value: Int) extends Instruction
+  case class SetV(r: Reg, value: Int) extends Instruction {
+    def op(m: Machine) = {
+      m.set(r, value)
+    }
+  }
 
   object SetV {
     def fromString(s: String) : Option[SetV] = {
@@ -43,7 +72,11 @@ object Day18 {
     }
   }
 
-  case class SetR(r: Reg, value: Reg) extends Instruction
+  case class SetR(r: Reg, value: Reg) extends Instruction {
+    def op(m: Machine) = {
+      m.set(r, value)
+    }
+  }
 
   object SetR {
     def fromString(s: String) : Option[SetR] = {
@@ -55,7 +88,11 @@ object Day18 {
     }
   }
 
-  case class AddV(r: Reg, value: Int) extends Instruction
+  case class AddV(r: Reg, value: Int) extends Instruction {
+    def op(m: Machine) = {
+      m.set(r, value + m.get(r))
+    }
+  }
 
   object AddV {
     def fromString(s: String) : Option[AddV] = {
@@ -67,7 +104,11 @@ object Day18 {
     }
   }
 
-  case class AddR(r: Reg, value: Reg) extends Instruction
+  case class AddR(r: Reg, r2: Reg) extends Instruction {
+    def op(m: Machine) = {
+      m.set(r, m.get(r2) + m.get(r))
+    }
+  }
 
   object AddR {
     def fromString(s: String) : Option[AddR] = {
@@ -79,7 +120,11 @@ object Day18 {
     }
   }
 
-  case class MulV(r1: Reg, value: Int) extends Instruction
+  case class MulV(r1: Reg, value: Int) extends Instruction {
+    def op(m: Machine) = {
+      m.set(r1, value * m.get(r1))
+    }
+  }
 
   object MulV {
     def fromString(s: String) : Option[MulV] = {
@@ -91,7 +136,11 @@ object Day18 {
     }
   }
 
-  case class MulR(r1: Reg, r2: Reg) extends Instruction
+  case class MulR(r1: Reg, r2: Reg) extends Instruction {
+    def op(m: Machine) = {
+      m.set(r1, m.get(r1) * m.get(r1))
+    }
+  }
 
   object MulR {
     def fromString(s: String) : Option[MulR] = {
