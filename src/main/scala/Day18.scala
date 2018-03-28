@@ -1,10 +1,9 @@
-import fs2.{Chunk, Pure}
-
+import scala.io.Source
 import scala.util.Try
 
 object Day18 {
 
-  val sampleInstructions = """set a 1
+  private val sampleInstructions = """set a 1
                              |add a 2
                              |mul a a
                              |mod a 5
@@ -21,7 +20,10 @@ object Day18 {
 
   type Reg = Char
 
-  case class Machine(regs : Map[Reg, Int], lastSound : Int) {
+  case class Machine(regs : Map[Reg, Int] = Map.empty,
+                     lastSoundPlayed : Int = 0,
+                     lastSoundRecovered : Int = 0,
+                     nextInstructionOffset : Int = 1) {
 
     def get(reg: Reg): Int = regs.getOrElse(reg, 0)
 
@@ -41,8 +43,8 @@ object Day18 {
   }
 
   case class Snd(r: Reg) extends Instruction {
-    def op(m: Machine) = {
-      m.copy(lastSound = m.get(r))
+    def op(m: Machine) : Machine = {
+      m.copy(lastSoundPlayed = m.get(r))
     }
   }
 
@@ -57,7 +59,7 @@ object Day18 {
   }
 
   case class SetV(r: Reg, value: Int) extends Instruction {
-    def op(m: Machine) = {
+    def op(m: Machine) : Machine = {
       m.set(r, value)
     }
   }
@@ -73,7 +75,7 @@ object Day18 {
   }
 
   case class SetR(r: Reg, value: Reg) extends Instruction {
-    def op(m: Machine) = {
+    def op(m: Machine) : Machine = {
       m.set(r, value)
     }
   }
@@ -89,7 +91,7 @@ object Day18 {
   }
 
   case class AddV(r: Reg, value: Int) extends Instruction {
-    def op(m: Machine) = {
+    def op(m: Machine) : Machine = {
       m.set(r, value + m.get(r))
     }
   }
@@ -105,7 +107,7 @@ object Day18 {
   }
 
   case class AddR(r: Reg, r2: Reg) extends Instruction {
-    def op(m: Machine) = {
+    def op(m: Machine) : Machine = {
       m.set(r, m.get(r2) + m.get(r))
     }
   }
@@ -121,7 +123,7 @@ object Day18 {
   }
 
   case class MulV(r1: Reg, value: Int) extends Instruction {
-    def op(m: Machine) = {
+    def op(m: Machine) : Machine = {
       m.set(r1, value * m.get(r1))
     }
   }
@@ -137,7 +139,7 @@ object Day18 {
   }
 
   case class MulR(r1: Reg, r2: Reg) extends Instruction {
-    def op(m: Machine) = {
+    def op(m: Machine) : Machine = {
       m.set(r1, m.get(r1) * m.get(r1))
     }
   }
@@ -152,7 +154,11 @@ object Day18 {
     }
   }
 
-  case class ModV(r1: Reg, value: Int) extends Instruction
+  case class ModV(r1: Reg, value: Int) extends Instruction {
+    def op(m: Machine) : Machine = {
+      m.set(r1, m.get(r1) % value)
+    }
+  }
 
   object ModV {
     def fromString(s: String) : Option[ModV] = {
@@ -164,11 +170,15 @@ object Day18 {
     }
   }
 
-  case class ModR(r1: Reg, r2: Reg) extends Instruction
+  case class ModR(r1: Reg, r2: Reg) extends Instruction {
+    def op(m: Machine) : Machine = {
+      m.set(r1, m.get(r1) % m.get(r2))
+    }
+  }
 
   object ModR {
     def fromString(s: String) : Option[ModR] = {
-      val m1 = "mul ([a-z]) ([a-z])".r
+      val m1 = "mod ([a-z]) ([a-z])".r
       Try {
         val m1(a,b) = s
         ModR(a.head, b.head)
@@ -176,7 +186,16 @@ object Day18 {
     }
   }
 
-  case class Rcv(r1 : Reg) extends Instruction
+  case class Rcv(r1 : Reg) extends Instruction {
+    def op(m: Machine) : Machine = {
+      val ls = m.get(r1)
+
+      if(ls != 0) {
+        m.copy(lastSoundRecovered = m.lastSoundPlayed)
+      } else
+        m
+    }
+  }
 
   object Rcv {
     def fromString(s: String) : Option[Rcv] = {
@@ -188,7 +207,15 @@ object Day18 {
     }
   }
 
-  case class JgzR(r1 : Reg, r2: Reg) extends Instruction
+  case class JgzR(r1 : Reg, offsetR: Reg) extends Instruction {
+    def op(m: Machine) : Machine = {
+
+      if(m.get(r1) == 0)
+        m.copy(nextInstructionOffset = 1)
+      else
+        m.copy(nextInstructionOffset = m.get(offsetR))
+    }
+  }
 
   object JgzR {
     def fromString(s: String) : Option[JgzR] = {
@@ -200,7 +227,35 @@ object Day18 {
     }
   }
 
-  case class JgzV(r1 : Reg, value: Int) extends Instruction
+  case class JgzVV(value : Int, offset: Int) extends Instruction {
+    def op(m: Machine) : Machine = {
+
+      if(value == 0)
+        m.copy(nextInstructionOffset = 1)
+      else
+        m.copy(nextInstructionOffset = offset)
+    }
+  }
+
+  object JgzVV {
+    def fromString(s: String) : Option[JgzVV] = {
+      val m1 = "jgz ([-]*[0-9]+) ([-]*[0-9]+)".r
+      Try {
+        val m1(a,b) = s
+        JgzVV(a.toInt, b.toInt)
+      }.toOption
+    }
+  }
+
+  case class JgzV(r1 : Reg, offset: Int) extends Instruction {
+    def op(m: Machine) : Machine = {
+
+      if(m.get(r1) == 0)
+        m.copy(nextInstructionOffset = 1)
+      else
+        m.copy(nextInstructionOffset = offset)
+    }
+  }
 
   object JgzV {
     def fromString(s: String) : Option[JgzV] = {
@@ -226,7 +281,8 @@ object Day18 {
         ModV.fromString(s),
         Rcv.fromString(s),
         JgzR.fromString(s),
-        JgzV.fromString(s)
+        JgzV.fromString(s),
+        JgzVV.fromString(s)
       ).flatten
 
       instruction.head
@@ -237,14 +293,51 @@ object Day18 {
   def readInstructionsFromString(s: String) : Vector[Instruction] =
     s.lines.toVector.map{Instruction.fromString}
 
-  def main(args: Array[String]) : Unit = {
+  def execute(machine: Machine, program: Vector[Instruction], pc: Int = -1) : Int = {
 
+    val nextPC = pc + machine.nextInstructionOffset
+
+    val nextInstruction = program(nextPC)
+
+    println(s"execute $nextInstruction")
+    println(s"pre machine $machine")
+
+    val newMachine = nextInstruction.op(machine)
+
+    println(s"postmachine $newMachine")
+
+    if(newMachine.lastSoundRecovered != 0) {
+      newMachine.lastSoundRecovered
+    }
+    else {
+      execute(newMachine, program, nextPC)
+    }
+
+  }
+
+  def main(args: Array[String]) : Unit = {
 
     println(s"snd ${Snd.fromString("snd a")}")
     println(s"set ${SetV.fromString("set c -12")}")
     println(s"set ${SetV.fromString("set z 42")}")
 
-    println(readInstructionsFromString(sampleInstructions))
+    val sampleProgram = readInstructionsFromString(sampleInstructions)
+
+    // Now to execute the program until the first time a rcv
+    // instruction is executed with a non-zero value
+
+    val f = execute(Machine(), sampleProgram)
+
+    println(s"sample freq = $f")
+
+    val step1Input = Source.fromResource("input18.txt").mkString
+
+    val step1Program = readInstructionsFromString(step1Input)
+
+    val s1 = execute(Machine(), step1Program)
+
+    println(s"step1 freq = $s1")
+
 
   }
 
