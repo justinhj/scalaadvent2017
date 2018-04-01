@@ -302,7 +302,7 @@ object Day18 {
     println(s"execute $nextInstruction")
     println(s"pre machine $machine")
 
-    val newMachine = nextInstruction.op(machine)
+    val newMachine = nextInstruction.op(machine.copy(nextInstructionOffset = 1))
 
     println(s"postmachine $newMachine")
 
