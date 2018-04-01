@@ -20,14 +20,14 @@ object Day18 {
 
   type Reg = Char
 
-  case class Machine(regs : Map[Reg, Int] = Map.empty,
-                     lastSoundPlayed : Int = 0,
-                     lastSoundRecovered : Int = 0,
+  case class Machine(regs : Map[Reg, Long] = Map.empty,
+                     lastSoundPlayed : Long = 0,
+                     lastSoundRecovered : Long = 0,
                      nextInstructionOffset : Int = 1) {
 
-    def get(reg: Reg): Int = regs.getOrElse(reg, 0)
+    def get(reg: Reg): Long = regs.getOrElse(reg, 0)
 
-    def set(reg: Reg, value: Int) : Machine = {
+    def set(reg: Reg, value: Long) : Machine = {
 
       this.copy(regs = regs updated (reg, value))
 
@@ -58,7 +58,7 @@ object Day18 {
     }
   }
 
-  case class SetV(r: Reg, value: Int) extends Instruction {
+  case class SetV(r: Reg, value: Long) extends Instruction {
     def op(m: Machine) : Machine = {
       m.set(r, value)
     }
@@ -90,7 +90,7 @@ object Day18 {
     }
   }
 
-  case class AddV(r: Reg, value: Int) extends Instruction {
+  case class AddV(r: Reg, value: Long) extends Instruction {
     def op(m: Machine) : Machine = {
       m.set(r, value + m.get(r))
     }
@@ -122,7 +122,7 @@ object Day18 {
     }
   }
 
-  case class MulV(r1: Reg, value: Int) extends Instruction {
+  case class MulV(r1: Reg, value: Long) extends Instruction {
     def op(m: Machine) : Machine = {
       m.set(r1, value * m.get(r1))
     }
@@ -154,7 +154,7 @@ object Day18 {
     }
   }
 
-  case class ModV(r1: Reg, value: Int) extends Instruction {
+  case class ModV(r1: Reg, value: Long) extends Instruction {
     def op(m: Machine) : Machine = {
       m.set(r1, m.get(r1) % value)
     }
@@ -213,7 +213,7 @@ object Day18 {
       if(m.get(r1) == 0)
         m.copy(nextInstructionOffset = 1)
       else
-        m.copy(nextInstructionOffset = m.get(offsetR))
+        m.copy(nextInstructionOffset = m.get(offsetR).toInt)
     }
   }
 
@@ -227,13 +227,13 @@ object Day18 {
     }
   }
 
-  case class JgzVV(value : Int, offset: Int) extends Instruction {
+  case class JgzVV(value : Long, offset: Long) extends Instruction {
     def op(m: Machine) : Machine = {
 
       if(value == 0)
         m.copy(nextInstructionOffset = 1)
       else
-        m.copy(nextInstructionOffset = offset)
+        m.copy(nextInstructionOffset = offset.toInt)
     }
   }
 
@@ -247,13 +247,13 @@ object Day18 {
     }
   }
 
-  case class JgzV(r1 : Reg, offset: Int) extends Instruction {
+  case class JgzV(r1 : Reg, offset: Long) extends Instruction {
     def op(m: Machine) : Machine = {
 
       if(m.get(r1) == 0)
         m.copy(nextInstructionOffset = 1)
       else
-        m.copy(nextInstructionOffset = offset)
+        m.copy(nextInstructionOffset = offset.toInt)
     }
   }
 
@@ -293,18 +293,18 @@ object Day18 {
   def readInstructionsFromString(s: String) : Vector[Instruction] =
     s.lines.toVector.map{Instruction.fromString}
 
-  def execute(machine: Machine, program: Vector[Instruction], pc: Int = -1) : Int = {
+  def execute(machine: Machine, program: Vector[Instruction], pc: Int = -1) : Long = {
 
     val nextPC = pc + machine.nextInstructionOffset
 
     val nextInstruction = program(nextPC)
 
-    println(s"execute $nextInstruction")
-    println(s"pre machine $machine")
+    //println(s"execute $nextInstruction")
+    //println(s"pre machine $machine")
 
     val newMachine = nextInstruction.op(machine.copy(nextInstructionOffset = 1))
 
-    println(s"postmachine $newMachine")
+    //println(s"postmachine $newMachine")
 
     if(newMachine.lastSoundRecovered != 0) {
       newMachine.lastSoundRecovered
