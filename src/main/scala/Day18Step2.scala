@@ -1,18 +1,15 @@
 import scala.io.Source
 import scala.util.Try
 
-object Day18 {
+object Day18Step2 {
 
-  private val sampleInstructions = """set a 1
-                             |add a 2
-                             |mul a a
-                             |mod a 5
-                             |snd a
-                             |set a 0
-                             |rcv a
-                             |jgz a -1
-                             |set a 1
-                             |jgz a -2""".stripMargin
+  private val sampleInstructions = """snd 1
+                                     |snd 2
+                                     |snd 3
+                                     |rcv a
+                                     |rcv b
+                                     |rcv c
+                                     |rcv d""".stripMargin
 
   trait Instruction {
     def op(m : Machine) : Machine
@@ -21,9 +18,10 @@ object Day18 {
   type Reg = Char
 
   case class Machine(regs : Map[Reg, Long] = Map.empty,
-                     lastSoundPlayed : Long = 0,
-                     lastSoundRecovered : Long = 0,
-                     nextInstructionOffset : Int = 1) {
+                     nextInstructionOffset : Int = 1,
+                     messages : Vector[Long] = Vector.empty,
+                     transmit : Option[Long] = None
+                      ) {
 
     def get(reg: Reg): Long = regs.getOrElse(reg, 0)
 
@@ -42,18 +40,39 @@ object Day18 {
 
   }
 
-  case class Snd(r: Reg) extends Instruction {
+
+  case class SndV(v: Long) extends Instruction {
+    // To send we just set the current transmit
     def op(m: Machine) : Machine = {
-      m.copy(lastSoundPlayed = m.get(r))
+
+      m.copy(transmit = Some(v))
     }
   }
 
-  object Snd {
-    def fromString(s: String) : Option[Snd] = {
+  object SndV {
+    def fromString(s: String) : Option[SndV] = {
+      val m1 = "snd ([-]*[0-9]+)".r
+      Try {
+        val m1(a) = s
+        SndV(a.toInt)
+      }.toOption
+    }
+  }
+
+  case class SndR(r: Reg) extends Instruction {
+    // To send we just set the current transmit
+    def op(m: Machine) : Machine = {
+
+      m.copy(transmit = Some(m.get(r)))
+    }
+  }
+
+  object SndR {
+    def fromString(s: String) : Option[SndR] = {
       val m1 = "snd ([a-z])".r
       Try {
         val m1(a) = s
-        Snd(a.head)
+        SndR(a.head)
       }.toOption
     }
   }
@@ -187,13 +206,22 @@ object Day18 {
   }
 
   case class Rcv(r1 : Reg) extends Instruction {
-    def op(m: Machine) : Machine = {
-      val ls = m.get(r1)
 
-      if(ls != 0) {
-        m.copy(lastSoundRecovered = m.lastSoundPlayed)
-      } else
-        m
+    // This will stop progress (PC will increment by zero) until an item is ready in the messages
+    // the store it in r1
+
+    def op(m: Machine) : Machine = {
+
+      if(m.messages.isEmpty) {
+        m.copy(nextInstructionOffset = 0)
+      } else {
+        val newMessages = m.messages.drop(1)
+        val message = m.messages(0)
+        val newRegs = m.regs.updated(r1, message)
+
+        m.copy(messages = newMessages, regs = newRegs)
+      }
+
     }
   }
 
@@ -210,7 +238,7 @@ object Day18 {
   case class JgzR(r1 : Reg, offsetR: Reg) extends Instruction {
     def op(m: Machine) : Machine = {
 
-      if(m.get(r1) == 0)
+      if(m.get(r1) <= 0)
         m.copy(nextInstructionOffset = 1)
       else
         m.copy(nextInstructionOffset = m.get(offsetR).toInt)
@@ -230,7 +258,7 @@ object Day18 {
   case class JgzVV(value : Long, offset: Long) extends Instruction {
     def op(m: Machine) : Machine = {
 
-      if(value == 0)
+      if(value <= 0)
         m.copy(nextInstructionOffset = 1)
       else
         m.copy(nextInstructionOffset = offset.toInt)
@@ -250,7 +278,7 @@ object Day18 {
   case class JgzV(r1 : Reg, offset: Long) extends Instruction {
     def op(m: Machine) : Machine = {
 
-      if(m.get(r1) == 0)
+      if(m.get(r1) <= 0)
         m.copy(nextInstructionOffset = 1)
       else
         m.copy(nextInstructionOffset = offset.toInt)
@@ -270,7 +298,9 @@ object Day18 {
   object Instruction {
     def fromString(s: String) : Instruction = {
 
-      val instruction = List(Snd.fromString(s),
+      val instruction = List(
+        SndR.fromString(s),
+        SndV.fromString(s),
         MulR.fromString(s),
         MulV.fromString(s),
         AddR.fromString(s),
@@ -293,55 +323,80 @@ object Day18 {
   def readInstructionsFromString(s: String) : Vector[Instruction] =
     s.lines.toVector.map{Instruction.fromString}
 
-  def execute(machine: Machine, program: Vector[Instruction], pc: Int = -1) : Long = {
+  def execute(machine0: Machine, machine1: Machine, program: Vector[Instruction], pc0: Int = -1, pc1: Int = -1, prog1Sends : Int = 0) : Long = {
 
-    val nextPC = pc + machine.nextInstructionOffset
+    val nextPC0 = pc0 + machine0.nextInstructionOffset
+    val nextPC1 = pc1 + machine1.nextInstructionOffset
 
-    val nextInstruction = program(nextPC)
+    val nextInstruction0 = program(nextPC0)
+    val nextInstruction1 = program(nextPC1)
 
-    //println(s"execute $nextInstruction")
-    //println(s"pre machine $machine")
+    //println(s"execute $nextInstruction0 $nextInstruction1")
 
-    val newMachine = nextInstruction.op(machine.copy(nextInstructionOffset = 1))
+    //println(s"pre execute machine0 $machine0 machine1 $machine1")
 
-    //println(s"postmachine $newMachine")
+    val newMachine0 = nextInstruction0.op(machine0.copy(nextInstructionOffset = 1))
+    val newMachine1 = nextInstruction1.op(machine1.copy(nextInstructionOffset = 1))
 
-    if(newMachine.lastSoundRecovered != 0) {
-      newMachine.lastSoundRecovered
+    //println(s"post execute machine0 $newMachine0 machine1 $newMachine1")
+
+    var incrementSend = false
+
+    // take any output from the machines and it add to the input queue of the other machine
+
+    val newMachineDelivered0 = if(newMachine1.transmit.isEmpty) {
+      newMachine0.copy(transmit = None)
+    } else {
+      incrementSend = true
+      newMachine0.copy(messages = newMachine0.messages :+ newMachine1.transmit.get, transmit = None)
+    }
+
+    val newMachineDelivered1 = if(newMachine0.transmit.isEmpty) {
+      newMachine1.copy(transmit = None)
+    } else {
+      newMachine1.copy(messages = newMachine1.messages :+ newMachine0.transmit.get, transmit = None)
+    }
+
+    //println(s"post messaging machine0 $newMachineDelivered0 machine1 $newMachineDelivered1")
+
+    // The program terminates when both programs are in receive mode and have empty message queues
+
+    if(nextInstruction0.isInstanceOf[Rcv] &&
+      nextInstruction1.isInstanceOf[Rcv] &&
+      newMachine0.messages.isEmpty &&
+      newMachine1.messages.isEmpty
+    ) {
+      prog1Sends
     }
     else {
-      execute(newMachine, program, nextPC)
+
+      val sends = if(incrementSend) prog1Sends + 1 else prog1Sends
+
+      execute(newMachineDelivered0, newMachineDelivered1, program,  nextPC0, nextPC1, sends)
+
     }
 
   }
 
   def main(args: Array[String]) : Unit = {
 
-    println(s"snd ${Snd.fromString("snd a")}")
-    println(s"set ${SetV.fromString("set c -12")}")
-    println(s"set ${SetV.fromString("set z 42")}")
-
     val sampleProgram = readInstructionsFromString(sampleInstructions)
 
-    // Now to execute the program until the first time a rcv
-    // instruction is executed with a non-zero value
+    // execute the program on twin machines
 
-    val f = execute(Machine(), sampleProgram)
+    val f = execute(Machine(Map('p' -> 0)), Machine(Map('p' -> 1)), sampleProgram)
 
-    println(s"sample freq = $f")
+    println(s"step 1 prog 1 sends = $f")
 
     val step1Input = Source.fromResource("input18.txt").mkString
 
     val step1Program = readInstructionsFromString(step1Input)
 
-    val s1 = execute(Machine(), step1Program)
+    val s1 = execute(Machine(Map('p' -> 0)), Machine(Map('p' -> 1)), step1Program)
 
-    println(s"step1 freq = $s1")
-
+    println(s"step 2 prog 1 sends = $s1")
 
   }
-
-
 
 
 }
@@ -399,6 +454,8 @@ At the time the recover operation is executed, the frequency of the last sound p
 What is the value of the recovered frequency (the value of the most recently played sound) the first time a rcv
 instruction is executed with a non-zero value?
 
+Step 2
+======
 
 As you congratulate yourself for a job well done, you notice that the documentation has been on the back of the tablet
 this entire time. While you actually got most of the instructions correct, there are a few key differences. This assembly
