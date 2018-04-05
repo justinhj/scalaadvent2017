@@ -1,10 +1,14 @@
+import cats.Eval
+import cats.data.EitherT
 import cats.effect.IO
-import fs2.{Pure, Stream}
+import fs2.{Pipe, Pull, Pure, Scheduler, Stream}
+import fs2.Scheduler._
+import cats.effect.IO
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-
 import scala.concurrent.ExecutionContext.Implicits.global
+import cats.implicits._
 
 // Exercises and samples from
 // https://functional-streams-for-scala.github.io/fs2/guide.html#resource-acquisition
@@ -87,6 +91,33 @@ object FS2Play {
       }
     }
 
+
+    // Takewhile condition is true
+    def myTakewhile[F[_],O](fo : (O => Boolean)): Pipe[F,O,O] = {
+
+      def go(s: Stream[F,O], fo : (O => Boolean)): Pull[F,O,Unit] = {
+        s.pull.uncons.flatMap {
+          case Some((hd,tl)) =>
+
+            Pull.segment(hd.takeWhile(fo)).flatMap {
+              case Left((a,rem)) =>
+                go(tl,fo)
+              case Right(a) =>
+                Pull.done
+            }
+          case None =>
+            Pull.done
+        }
+      }
+
+      in =>
+        go(in,fo).stream
+    }
+
+    println(
+      Stream.range(0,100).through(myTakewhile{a : Int => a < 7}).toList)
+
+
     val s3: IO[Unit] = IO(println("s3 output !!"))
     val eval: Stream[IO, Nothing] = myEval_(s3)
 
@@ -122,6 +153,37 @@ object FS2Play {
 
     val errorStream = Stream(1,2) ++ (throw new Exception("nooo!!!"))
 
+    // periodically emit something
+
+//    val s4 = Scheduler(corePoolSize = 1)
+
+    //implicit val executionContext: ExecutionContext = ExecutionContext.Implicits.global
+    val streamData: Stream[IO, String] = Scheduler[IO](corePoolSize = 2).flatMap {
+      scheduler =>
+        scheduler.awakeEvery[IO](1.second).map{
+          _ =>
+            (System.currentTimeMillis() % 10000).toString}
+    }
+
+
+//    val hmm = streamData.compile.toVector
+//
+//    val out = hmm.unsafeRunSync()
+//
+//    // print the time
+//
+//    val ios = streamData.map {
+//
+//      time =>
+//        IO( println(s"the time is $time") )
+//
+//    }
+//
+//    ios.compile.drain
+//
+//    Thread.sleep ( 10000 )
+
+    //periodicHello.
 
 
   }

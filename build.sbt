@@ -10,7 +10,7 @@ scalacOptions += "-Ypartial-unification"
 
 libraryDependencies += "org.typelevel" %% "cats-core" % "1.0.0"
 
-libraryDependencies += "org.typelevel" %% "cats-effect" % "0.8"
+libraryDependencies += "org.typelevel" %% "cats-effect" % "0.10"
 
 libraryDependencies += "com.lihaoyi" % "ammonite" % "1.0.5" % "test" cross CrossVersion.full
 
