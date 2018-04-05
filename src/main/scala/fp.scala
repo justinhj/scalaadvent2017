@@ -3,7 +3,7 @@ object Play1 {
     // Implement abstract functor and monad
 
     trait Functor[F[_]] {
-        def map[A,B](fa: F[A], fab : A => B): F[B]
+        def myMap[A,B](fa : F[A], fab : A => B): F[B]
     }
 
     trait Monad[F[_]] extends Functor[F] {
@@ -14,7 +14,7 @@ object Play1 {
 
         // A Monad can implement map in terms of pure and flatmap
 
-        def map[A,B](fa: F[A], fab : A => B): F[B] = {
+        def myMap[A,B](fa: F[A], fab : A => B): F[B] = {
           flatMap[A,B](fa, a => pure(fab(a)))
         }
       
@@ -26,15 +26,28 @@ object Play1 {
 
       def pure[A](a: A) = Some(a)
 
-      def flatMap[A, B](v: Option[A], f: A => Option[B]) = {
+      def flatMap[A, B](fa: Option[A], f: A => Option[B]) = {
 
-        v.map(f).flatten
+        fa match {
+          case Some(a) => f(a)
+          case None => None
+        }
 
       }
 
     }
 
-    // Implement for list
+    // Implicit conversion from Option to Monad extender
+
+    case class OptionMonadExtender[A](private val o : Option[A]) extends OptionMonad {
+
+      // need to add this function to allow single argument
+      implicit def myMap[B](f: A => B) : Option[B] = myMap(o, f)
+    }
+
+    implicit def optionMonad[A](o : Option[A]) : OptionMonadExtender[A] = OptionMonadExtender(o)
+
+  // Implement for list
 
     class ListMonad extends Monad[List] {
 
@@ -44,10 +57,14 @@ object Play1 {
             v.map(f).flatten
         }
 
-
     }
 
-    val lm = new ListMonad
+  case class ListMonadExtender[A](l : List[A]) extends ListMonad
+
+  implicit def listMonad[A](l : List[A]) : ListMonadExtender[A] = ListMonadExtender(l)
+
+
+  val lm = new ListMonad
 
     val x = 3
 
@@ -76,12 +93,18 @@ object Play1 {
     val ao = om.flatMap(to, testO)
     val ao2 = om.flatMap(to2, testO)
 
+    val opString : Option[String] = Some("Justin")
+
+    val mapAnOption = opString.myMap{s => s.reverse}
 
     def main(args: Array[String]) : Unit = {
       println(s"ao = $ao")
       println(s"ao2 = $ao2")
 
       println(s"out = $out")
+
+      println(s"map an option = $mapAnOption")
+
     }
   
 }
