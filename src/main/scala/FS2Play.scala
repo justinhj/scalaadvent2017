@@ -1,7 +1,7 @@
 import cats.Eval
 import cats.data.EitherT
 import cats.effect.IO
-import fs2.{Pipe, Pull, Pure, Scheduler, Stream}
+import fs2.{Chunk, Pipe, Pull, Pure, Scheduler, Segment, Stream}
 import fs2.Scheduler._
 import cats.effect.IO
 
@@ -91,6 +91,85 @@ object FS2Play {
       }
     }
 
+    def tk[F[_],O](n: Long): Pipe[F,O,O] = {
+      def go(s: Stream[F,O], n: Long): Pull[F,O,Unit] = {
+        s.pull.uncons.flatMap {
+          case Some((hd: Segment[O, Unit],tl : Stream[F,O])) =>
+
+            Pull.segment(hd.take(n)).flatMap {
+              case Left((_,rem)) =>
+                go(tl,rem)
+              case Right(em: Segment[O, Unit]) =>
+
+                //output1(em.)
+                Pull.done
+            }
+          case None => Pull.done
+        }
+      }
+      in => go(in,n).stream
+    }
+
+    // Intersperse
+//    def myIntersperse[F[_],O](in : O): Pipe[F,O,O] = {
+//
+//      def go(s: Stream[F,O], in : O): Pull[F,O,Unit] = {
+//        s.pull.uncons.flatMap {
+//          case Some((hd,tl)) =>
+//
+//            Pull.segment(hd.take(1)).flatMap {
+//              case Left(_) =>
+//                go(s, 1)
+//              case Right(seg) =>
+//                Pull.output(seg ++ Pull.output1(o))
+//
+//                //Pull.done // output(seg)
+//            }
+//
+//          case None =>
+//            Pull.done
+//        }
+//      }
+//
+//      in =>
+//        go(in,fo).stream
+//    }
+
+    def takeUntilNThings[F[_],O](n: Long, thing: O): Pipe[F,O,O] = {
+
+      def go(s: Stream[F,O], seenCount : Int, toOutput: List[O]) : Pull[F,O,Unit] = {
+
+        if(seenCount == n) {
+          Pull.done
+        }
+        else {
+          s.pull.uncons1.flatMap {
+
+            case Some((o, tl)) =>
+
+              val out = Pull.output1(o)
+              out.flatMap {
+
+              }
+
+              if(o == thing) {
+                go(tl, seenCount + 1, o :: toOutput)
+              }
+              else {
+                go(tl, seenCount, o :: toOutput)
+              }
+
+            case None =>
+              Pull.done
+
+          }
+        }
+      }
+
+      in => go(in, 0, List.empty).stream
+
+    }
+
 
     // Takewhile condition is true
     def myTakewhile[F[_],O](fo : (O => Boolean)): Pipe[F,O,O] = {
@@ -100,11 +179,13 @@ object FS2Play {
           case Some((hd,tl)) =>
 
             Pull.segment(hd.takeWhile(fo)).flatMap {
-              case Left((a,rem)) =>
-                go(tl,fo)
-              case Right(a) =>
-                Pull.done
+              case Left(_) =>
+                go(s, fo)
+              case Right(seg) =>
+
+                Pull.done // output(seg)
             }
+
           case None =>
             Pull.done
         }
@@ -114,9 +195,77 @@ object FS2Play {
         go(in,fo).stream
     }
 
-    println(
+
+    // takes elements until we've taken n of the specified thing
+
+//    def takeUntilNThings[F[_],O](n: Long, thing: O): Pipe[F,O,O] = {
+//      in =>
+//        in.scanSegmentsOpt(n) { count =>
+//          if (count == 0) None
+//          else Some(seg => {
+//
+//            //Stream.peek
+//
+//            seg.uncons1
+//
+//
+//            ???
+//
+////            s.mapResult {
+////            case Left((_, c)) =>
+////              count
+////            case Right(s) =>
+////
+////              println(s)
+////
+////              0
+////            }
+//          })
+//        }
+//    }
+
+
+    // take n using scanSegmentsOpt
+    def tksso[F[_],O](n: Long): Pipe[F,O,O] = {
+      in =>
+        in.scanSegmentsOpt(n) { n =>
+          if (n <= 0) None
+          else Some(seg => seg.take(n).mapResult {
+            case Left((_, n)) =>
+              n
+            case Right(s) =>
+              0
+          })
+        }
+    }
+
+    val cs = Stream.emits("absbsbsbaaabssbbcccaaa")
+
+    println("take 5 'a's ",
+      cs.through(takeUntilNThings(5, 'a')).toList)
+
+    println("zip with previous and next . ",
+      Stream.range(1, 10).zipWithPreviousAndNext.toList)
+
+
+    println("take 5 . ",
+      Stream.range(1, 100).through(tksso(5)).toList)
+
+
+    println("less than 7! ",
       Stream.range(0,100).through(myTakewhile{a : Int => a < 7}).toList)
 
+//    println(
+//      Stream.range(0,100).through(tk(5)).toList)
+
+    Stream.range(0,100).takeWhile(_ < 7).toList
+    //Stream.repeat(10).through(takeWhile{_ < 2})
+
+    println("less than 7 from empty stream ",
+      Stream.empty.through(myTakewhile[Pure, Int]{a : Int => a < 7}).toList)
+
+    println("less than 7 from empty stream ",
+      Stream.eval_{a : Int => a < 7})
 
     val s3: IO[Unit] = IO(println("s3 output !!"))
     val eval: Stream[IO, Nothing] = myEval_(s3)
