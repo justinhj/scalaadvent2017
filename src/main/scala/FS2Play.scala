@@ -137,7 +137,7 @@ object FS2Play {
 
     def takeUntilNThings[F[_],O](n: Long, thing: O): Pipe[F,O,O] = {
 
-      def go(s: Stream[F,O], seenCount : Int, toOutput: List[O]) : Pull[F,O,Unit] = {
+      def go(s: Stream[F,O], seenCount : Int) : Pull[F,O,Unit] = {
 
         if(seenCount == n) {
           Pull.done
@@ -147,16 +147,11 @@ object FS2Play {
 
             case Some((o, tl)) =>
 
-              val out = Pull.output1(o)
-              out.flatMap {
-
-              }
-
               if(o == thing) {
-                go(tl, seenCount + 1, o :: toOutput)
+                Pull.output1(o) >> go(tl, seenCount + 1)
               }
               else {
-                go(tl, seenCount, o :: toOutput)
+                Pull.output1(o) >> go(tl, seenCount)
               }
 
             case None =>
@@ -166,10 +161,35 @@ object FS2Play {
         }
       }
 
-      in => go(in, 0, List.empty).stream
+      in => go(in, 0).stream
 
     }
 
+    //scan[O2](z: O2)(f: (O2, O) => O2): Stream[F, O2]
+
+    def scan[F[_],O](z : O, f : (O,O) => O): Pipe[F,O,O] = {
+
+      def go(s: Stream[F,O], acc : O) : Pull[F,O,Unit] = {
+
+
+          s.pull.uncons1.flatMap {
+
+            case Some((o, tl)) =>
+
+              val nextVal = f(acc, o)
+
+              Pull.output1(nextVal) >> go(tl, nextVal)
+
+            case None =>
+              Pull.done
+
+          }
+
+      }
+
+      in => go(in, z).stream
+
+    }
 
     // Takewhile condition is true
     def myTakewhile[F[_],O](fo : (O => Boolean)): Pipe[F,O,O] = {
@@ -241,6 +261,8 @@ object FS2Play {
 
     val cs = Stream.emits("absbsbsbaaabssbbcccaaa")
 
+    //cs.scan
+
     println("take 5 'a's ",
       cs.through(takeUntilNThings(5, 'a')).toList)
 
@@ -255,8 +277,9 @@ object FS2Play {
     println("less than 7! ",
       Stream.range(0,100).through(myTakewhile{a : Int => a < 7}).toList)
 
-//    println(
-//      Stream.range(0,100).through(tk(5)).toList)
+    val res = Stream.range(0,10).through(scan(0, {(acc : Int, n: Int) => acc + n})).toList
+
+    println("running sum", res)
 
     Stream.range(0,100).takeWhile(_ < 7).toList
     //Stream.repeat(10).through(takeWhile{_ < 2})
