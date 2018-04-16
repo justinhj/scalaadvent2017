@@ -10,6 +10,8 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats.implicits._
 
+import scala.annotation.tailrec
+
 // Exercises and samples from
 // https://functional-streams-for-scala.github.io/fs2/guide.html#resource-acquisition
 // and other play
@@ -110,36 +112,11 @@ object FS2Play {
       in => go(in,n).stream
     }
 
-    // Intersperse
-//    def myIntersperse[F[_],O](in : O): Pipe[F,O,O] = {
-//
-//      def go(s: Stream[F,O], in : O): Pull[F,O,Unit] = {
-//        s.pull.uncons.flatMap {
-//          case Some((hd,tl)) =>
-//
-//            Pull.segment(hd.take(1)).flatMap {
-//              case Left(_) =>
-//                go(s, 1)
-//              case Right(seg) =>
-//                Pull.output(seg ++ Pull.output1(o))
-//
-//                //Pull.done // output(seg)
-//            }
-//
-//          case None =>
-//            Pull.done
-//        }
-//      }
-//
-//      in =>
-//        go(in,fo).stream
-//    }
+    def takeWhileRepeat[F[_],O](n: Long, f: O => Boolean): Pipe[F,O,O] = {
 
-    def takeUntilNThings[F[_],O](n: Long, thing: O): Pipe[F,O,O] = {
+      def go(s: Stream[F,O], wasTrueCount : Int) : Pull[F,O,Unit] = {
 
-      def go(s: Stream[F,O], seenCount : Int, toOutput: List[O]) : Pull[F,O,Unit] = {
-
-        if(seenCount == n) {
+        if(wasTrueCount == n) {
           Pull.done
         }
         else {
@@ -147,16 +124,11 @@ object FS2Play {
 
             case Some((o, tl)) =>
 
-              val out = Pull.output1(o)
-              out.flatMap {
-
-              }
-
-              if(o == thing) {
-                go(tl, seenCount + 1, o :: toOutput)
+              if(f(o)) {
+                Pull.output1(o) >> go(tl, wasTrueCount + 1)
               }
               else {
-                go(tl, seenCount, o :: toOutput)
+                Pull.output1(o) >> go(tl, wasTrueCount)
               }
 
             case None =>
@@ -166,10 +138,9 @@ object FS2Play {
         }
       }
 
-      in => go(in, 0, List.empty).stream
+      in => go(in, 0).stream
 
     }
-
 
     // Takewhile condition is true
     def myTakewhile[F[_],O](fo : (O => Boolean)): Pipe[F,O,O] = {
@@ -195,35 +166,27 @@ object FS2Play {
         go(in,fo).stream
     }
 
+    // Intersperse
 
-    // takes elements until we've taken n of the specified thing
+    def intersperse[F[_],O](io: O): Pipe[F,O,O] = {
 
-//    def takeUntilNThings[F[_],O](n: Long, thing: O): Pipe[F,O,O] = {
-//      in =>
-//        in.scanSegmentsOpt(n) { count =>
-//          if (count == 0) None
-//          else Some(seg => {
-//
-//            //Stream.peek
-//
-//            seg.uncons1
-//
-//
-//            ???
-//
-////            s.mapResult {
-////            case Left((_, c)) =>
-////              count
-////            case Right(s) =>
-////
-////              println(s)
-////
-////              0
-////            }
-//          })
-//        }
-//    }
+      def go(s: Stream[F,O]) : Pull[F,O,Unit] = {
 
+          s.pull.uncons1.flatMap {
+
+            case Some((o, tl)) =>
+              Pull.output1(o) >> Pull.output1(io) >> go(tl)
+
+            case None =>
+              Pull.done
+
+          }
+
+      }
+
+      in => go(in).stream
+
+    }
 
     // take n using scanSegmentsOpt
     def tksso[F[_],O](n: Long): Pipe[F,O,O] = {
@@ -241,8 +204,8 @@ object FS2Play {
 
     val cs = Stream.emits("absbsbsbaaabssbbcccaaa")
 
-    println("take 5 'a's ",
-      cs.through(takeUntilNThings(5, 'a')).toList)
+    println("take until seen 5 'a's ",
+      cs.through(takeWhileRepeat(5, {o => o == 'a'})).toList)
 
     println("zip with previous and next . ",
       Stream.range(1, 10).zipWithPreviousAndNext.toList)
@@ -251,6 +214,13 @@ object FS2Play {
     println("take 5 . ",
       Stream.range(1, 100).through(tksso(5)).toList)
 
+
+    println("take until 7 numbers divisible by 7 . ",
+      Stream.range(1, 100).through(takeWhileRepeat(7, {n => n % 7 == 0})).toList)
+
+
+    println("intersperse with 8's . ",
+      Stream.range(1, 10).through(intersperse(8)).toList)
 
     println("less than 7! ",
       Stream.range(0,100).through(myTakewhile{a : Int => a < 7}).toList)
@@ -314,6 +284,51 @@ object FS2Play {
             (System.currentTimeMillis() % 10000).toString}
     }
 
+    // This requires an execution context in scope
+    // eval means execute this IO for its effects and return the stream
+    // stream is in types O2 and O where O2 is >: to O
+    // which means???
+
+//    val ass = Stream(1,2,3).
+//      merge(Stream.eval(IO { Thread.sleep(400); 0 })).
+//      merge(Stream.eval(IO { Thread.sleep(200); 7 }))
+//      .joinUnbounded
+//
+//    println("concurrent merge")
+
+
+   // case class Message(response: String)
+
+//    def healthCheck: Stream[IO, Message] = ???
+//    def kafkaMessages: Stream[IO, Message] = ???
+//    def celsiusConverter: Stream[IO, Unit] = ???
+//
+//    def thing: Stream[Pure, Stream[IO, Message]] = Stream(
+//      healthCheck,
+//      celsiusConverter.drain,
+//      kafkaMessages
+//    )
+//
+//    def all: Stream[IO, Message] = thing.covary[IO].joinUnbounded
+//
+//    def hello = all.flatMap{
+//      f =>
+//
+//        Stream(f.response)
+//    }
+
+    /*
+
+  /// how to make sure a stream only runs once using a signal
+
+            Stream.eval(fs2.async.signalOf[IO, Boolean](false)).flatMap { interruptSignal =>
+            server[IO](new InetSocketAddress("localhost", TCPPort))
+                .interruptWhen(interruptSignal)
+                .flatMap(stream => stream.flatMap(socket => sendStreamInTCP[IO](socket, dataStream)) ++ Stream.eval_(interruptSignal.set(true)))
+        }.compile.drain.unsafeRunSync()
+
+
+     */
 
 //    val hmm = streamData.compile.toVector
 //

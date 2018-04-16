@@ -1,4 +1,7 @@
-object Play1 {
+import scala.annotation.tailrec
+import scala.language.{higherKinds, implicitConversions}
+
+object FPFromScratch {
 
     // Implement abstract functor and monad
 
@@ -8,14 +11,14 @@ object Play1 {
 
     trait Monad[F[_]] extends Functor[F] {
 
-        def pure[A](a: A): F[A]
+        def myPure[A](a: A): F[A]
 
-        def flatMap[A,B](v : F[A], f : A => F[B]) : F[B]
+        def myFlatMap[A,B](v : F[A], f : A => F[B]) : F[B]
 
         // A Monad can implement map in terms of pure and flatmap
 
         def myMap[A,B](fa: F[A], fab : A => B): F[B] = {
-          flatMap[A,B](fa, a => pure(fab(a)))
+          myFlatMap[A,B](fa, a => myPure(fab(a)))
         }
       
     }
@@ -24,9 +27,9 @@ object Play1 {
 
     class OptionMonad extends Monad[Option] {
 
-      def pure[A](a: A) = Some(a)
+      def myPure[A](a: A) = Some(a)
 
-      def flatMap[A, B](fa: Option[A], f: A => Option[B]) = {
+      def myFlatMap[A, B](fa: Option[A], f: A => Option[B]): Option[B] = {
 
         fa match {
           case Some(a) => f(a)
@@ -51,11 +54,27 @@ object Play1 {
 
     class ListMonad extends Monad[List] {
 
-        def pure[A](a: A) = List(a)
+      def myPure[A](a: A) = List(a)
 
-        def flatMap[A, B](v: List[A], f: A => List[B]) = {
-            v.map(f).flatten
+      // recursive implementation of flatmap that accumulates a list
+      // of the results as we go...
+      def myFlatMap[A, B](fa: List[A], f: A => List[B]): List[B] = {
+
+        def fm(fa: List[A], f: A => List[B]) : List[B] = {
+
+          fa match {
+            case hd :: tl =>
+              val m = f(hd)
+              m ++ fm(tl, f)
+
+            case Nil =>
+              Nil
+          }
+
         }
+
+        fm(fa, f)
+      }
 
     }
 
@@ -68,13 +87,15 @@ object Play1 {
 
     val x = 3
 
-    val pureX = lm.pure(x)
+    val pureX = lm.myPure(x)
 
     def testF(a: Int): List[Char] = s"$a * 2 = ${a * 2}".toList
 
     val tl = List[Int](1,5,7,20101)
 
-    val out = lm.flatMap(tl, testF)
+    val out = lm.myFlatMap(tl, testF)
+
+  println(s"test myflatmap $out")
 
     val to = Some(10)
     val to2 = Some(11)
@@ -90,8 +111,8 @@ object Play1 {
 
     val om = new OptionMonad
 
-    val ao = om.flatMap(to, testO)
-    val ao2 = om.flatMap(to2, testO)
+    val ao = om.myFlatMap(to, testO)
+    val ao2 = om.myFlatMap(to2, testO)
 
     val opString : Option[String] = Some("Justin")
 
