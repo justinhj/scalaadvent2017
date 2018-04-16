@@ -1,14 +1,10 @@
-import cats.Eval
-import cats.data.EitherT
-import cats.effect.IO
-import fs2.{Chunk, Pipe, Pull, Pure, Scheduler, Segment, Stream}
-import fs2.Scheduler._
-import cats.effect.IO
 
-import scala.concurrent.{ExecutionContext, Future}
+import cats.effect.IO
+import fs2.{Pipe, Pull, Pure, Scheduler, Segment, Stream}
+
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-import cats.implicits._
 
 import scala.annotation.tailrec
 
@@ -17,6 +13,36 @@ import scala.annotation.tailrec
 // and other play
 
 object FS2Play {
+
+  // Sort a list of numbers using a stream of IO
+  // Note that it will take n seconds to run, where n is the largest integer in your list
+  def sleepSort(n : List[Int]): List[Int] = {
+
+    val wut: Stream[IO, List[Int]] = Stream.emits(n).covary[IO].flatMap{ t => Stream.eval(IO{ Thread.sleep(t * 1000L); println(s"$n"); n })}
+
+    val wut2: Stream.ToEffect[IO, List[Int]] = wut.compile
+
+//    val s1 = Scheduler[IO](4)
+//
+//    val s2 = s1.flatMap {
+//      scheduler =>
+//        scheduler.awakeEvery(4 seconds)
+//    }
+//
+//    s2.merge(wut)
+
+    ???
+
+  }
+
+  def put(n: Int): IO[Unit] = IO(println(s"s is $n"))
+
+  def printRange(v: Int) : Stream[IO, Unit] = {
+    Stream.range(1, v).evalMap[IO, Unit]{n => put(n)}
+  }
+
+  //def seconds = Scheduler(1)
+
 
   def main(args: Array[String]) : Unit = {
 
@@ -124,7 +150,7 @@ object FS2Play {
 
             case Some((o, tl)) =>
 
-              if(f(o)) {
+              if(o == wasTrueCount) {
                 Pull.output1(o) >> go(tl, wasTrueCount + 1)
               }
               else {
@@ -139,6 +165,32 @@ object FS2Play {
       }
 
       in => go(in, 0).stream
+
+    }
+
+    //scan[O2](z: O2)(f: (O2, O) => O2): Stream[F, O2]
+
+    def scan[F[_],O](z : O, f : (O,O) => O): Pipe[F,O,O] = {
+
+      def go(s: Stream[F,O], acc : O) : Pull[F,O,Unit] = {
+
+
+          s.pull.uncons1.flatMap {
+
+            case Some((o, tl)) =>
+
+              val nextVal = f(acc, o)
+
+              Pull.output1(nextVal) >> go(tl, nextVal)
+
+            case None =>
+              Pull.done
+
+          }
+
+      }
+
+      in => go(in, z).stream
 
     }
 
@@ -225,8 +277,9 @@ object FS2Play {
     println("less than 7! ",
       Stream.range(0,100).through(myTakewhile{a : Int => a < 7}).toList)
 
-//    println(
-//      Stream.range(0,100).through(tk(5)).toList)
+    val res = Stream.range(0,10).through(scan(0, {(acc : Int, n: Int) => acc + n})).toList
+
+    println("running sum", res)
 
     Stream.range(0,100).takeWhile(_ < 7).toList
     //Stream.repeat(10).through(takeWhile{_ < 2})
@@ -237,13 +290,19 @@ object FS2Play {
     println("less than 7 from empty stream ",
       Stream.eval_{a : Int => a < 7})
 
-    val s3: IO[Unit] = IO(println("s3 output !!"))
-    val eval: Stream[IO, Nothing] = myEval_(s3)
+    val s3 = Stream.eval(IO(println("s3 output !!")))
+    val s4 = Stream.eval(IO({println("s4 output!"); 3}))
 
-    val evalled = eval.compile.toVector
-    val runned = evalled.unsafeRunSync()
+    val s5: Stream[IO, AnyVal] = s3 ++ s4
 
-    println(s"my eval $runned")
+    println(s"s5 ${s5.compile.drain.unsafeRunSync()}")
+
+    //val eval: Stream[IO, Nothing] = myEval_(s3)
+
+//    val evalled = eval.compile.toVector
+//    val runned = evalled.unsafeRunSync()
+//
+//    println(s"my eval $runned")
 
     // stream of future?
 
@@ -348,6 +407,14 @@ object FS2Play {
 //    Thread.sleep ( 10000 )
 
     //periodicHello.
+
+
+    //sleepSort((1 to 10).toList)
+
+
+
+
+    printRange(20).compile.drain.unsafeRunSync()
 
 
   }
