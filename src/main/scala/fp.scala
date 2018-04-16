@@ -1,16 +1,16 @@
 object Play1 {
 
-    // Implement abstract functor and monad
+  // Implement abstract functor and monad
 
-    trait Functor[F[_]] {
-        def myMap[A,B](fa : F[A], fab : A => B): F[B]
-    }
+  trait Functor[F[_]] {
+    def myMap[A,B](fa : F[A], fab : A => B): F[B]
+  }
 
-    trait Monad[F[_]] extends Functor[F] {
+  trait Monad[F[_]] extends Functor[F] {
 
-        def pure[A](a: A): F[A]
+    def pure[A](a: A): F[A]
 
-        def flatMap[A,B](v : F[A], f : A => F[B]) : F[B]
+    def flatMap[A,B](v : F[A], f : A => F[B]) : F[B]
 
         // A Monad can implement map in terms of pure and flatmap
 
@@ -70,7 +70,7 @@ object Play1 {
 
     val pureX = lm.pure(x)
 
-    def testF(a: Int): List[Char] = s"$a * 2 = ${a * 2}".toList
+  def testF(a: Int): List[Char] = s"$a * 2 = ${a * 2}".toList
 
     val tl = List[Int](1,5,7,20101)
 
