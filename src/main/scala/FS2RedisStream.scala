@@ -3,32 +3,41 @@ package com.heyesjones.fs2redis
 import cats.effect.{Effect, IO}
 import com.redis._
 import com.typesafe.scalalogging.LazyLogging
-import fs2._
-import fs2.async
-import scala.concurrent.ExecutionContext
+import fs2.{async, _}
 
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
 
 object FS2RedisStream extends LazyLogging {
 
   case class RedisSubscriber(redis: RedisClient, channel: String) {
 
-    // temp shitty converter from redis library callback to the
-    // one that we want which handles errors
-    def cbTranslate(pubSubMessage: PubSubMessage) : Either[Throwable, PubSubMessage] = {
-      Right(pubSubMessage)
-    }
+    // A user of this subscriber can set the callback
+    var newMessageCallback : Option[Either[Throwable, PubSubMessage] => Unit] = _
 
+    // Subscribe to the channel and pass any data through to the callback
+    redis.subscribe(channel) {
 
-    def withRows(cb: Either[Throwable, PubSubMessage] => Unit) = {
+      // We simply forward any M (messages) by way of the callback
 
-      redis.subscribe(channel){
-        message => cbTranslate(message)
+      redisMessage => redisMessage match {
+        case m @ M(_, message) if newMessageCallback isDefined =>
+          newMessageCallback.get(Right(m))
+
+        // If anything else happens we do nothing
+        case _ =>
+
       }
 
     }
 
+    def setCallback(cb: Either[Throwable, PubSubMessage] => Unit) = newMessageCallback = Some(cb)
+
   }
+
+  // with returns unit. it takes a callback that takes a message (or error) and returns unit
+  // in the sample code we call the function and set the callback to one that will enqueue (e)
+  // the emitted message
 
   // Readers guide:
   // [1] We create an queue of the appropriate effect type as well as value type (our redis messages)
@@ -40,20 +49,11 @@ object FS2RedisStream extends LazyLogging {
   def rows[F[_]](h : RedisSubscriber) (implicit F: Effect[F], ec: ExecutionContext): Stream[F,PubSubMessage] =
     for {
       q <- Stream.eval(async.unboundedQueue[F,Either[Throwable,PubSubMessage]]) // [1]
-
-      _ <- Stream.eval { F.delay(h.withRows(e => async.unsafeRunAsync(q.enqueue1(e))(_ => IO.unit))) } // [2]
-
+      _ <- Stream.eval { F.delay(h.setCallback(e => async.unsafeRunAsync(q.enqueue1(e))(_ => IO.unit)))} // [2]
       row <- q.dequeue.rethrow // [3]
     } yield row
 
-  //_ <-  Stream.eval { F.delay(redisclient.subscribe(channel, {e : PubSubMessage => async.unsafeRunAsync(q.enqueue1(e))})(_ => IO.unit)) } // [2]
-
-//  val streamData: Stream[IO, Long] = Scheduler[IO](corePoolSize = 1).flatMap { scheduler =>
-//    scheduler.awakeEvery[IO](10 milliseconds).map(f => f.toMillis)
-//  }
-
   def main(args : Array[String]) : Unit = {
-
 
     Try(new RedisClient("127.0.0.1", 6379)) match {
 
@@ -63,18 +63,14 @@ object FS2RedisStream extends LazyLogging {
 
         import scala.concurrent.ExecutionContext.Implicits.global
 
-        val wut = rows[IO](RedisSubscriber(rc, "test1"))
+        val channelStream = rows[IO](RedisSubscriber(rc, "test1"))
 
-        wut.take(5).compile.toList.unsafeRunSync()
+        val done: List[PubSubMessage] = channelStream.take(5).compile.toList.unsafeRunSync()
+
+        println(done)
 
       case Failure(exception) =>
-
         logger.error(s"Failed to connect to Redis. ${exception.getMessage}")
-
     }
-
-
-
   }
-
 }
