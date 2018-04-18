@@ -1,9 +1,17 @@
 package com.heyesjones.fs2redis
 
+/*
+
+FS2 stream example based on the CSV rows one in the fs2 guide
+It waits for 5 messages to be published on the "test1" channel
+and then prints them out
+
+ */
+
 import cats.effect.{Effect, IO}
 import com.redis._
 import com.typesafe.scalalogging.LazyLogging
-import fs2.{async, _}
+import fs2.{async, Stream}
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
@@ -65,9 +73,18 @@ object FS2RedisStream extends LazyLogging {
 
         val channelStream = rows[IO](RedisSubscriber(rc, "test1"))
 
-        val done: List[PubSubMessage] = channelStream.take(5).compile.toList.unsafeRunSync()
+        val itemsToTake = 5
 
-        println(done)
+        channelStream.take(itemsToTake).
+          evalMap{
+            item =>
+              IO(println(s"Item: $item"))
+          }.
+          compile.toList.unsafeRunSync()
+
+        println(s"Got $itemsToTake")
+
+        rc.disconnect
 
       case Failure(exception) =>
         logger.error(s"Failed to connect to Redis. ${exception.getMessage}")
