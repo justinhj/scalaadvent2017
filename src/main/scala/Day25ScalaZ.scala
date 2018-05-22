@@ -230,42 +230,39 @@ object Day25ScalaZ {
 
       //println(s"In state ${currentState}")
 
-      slots.replace(currentSlot, op.writeValue)
-      //currentSlot.value = op.writeValue
+      val updatedSlots = slots.replace(currentSlot, op.writeValue)
 
+      op.move match {
 
-      ???
-//      op.move match {
-//
-//        case Left =>
-//
-//          currentSlot.left match {
-//
-//            case Some(leftSlot) =>
-//              //println("Move left - existing slot")
-//              TuringMachine(currentSlot = leftSlot, op.continueState, program, steps + 1)
-//
-//            case None =>
-//              //println("Move left - new slot")
-//              currentSlot.left = Some(Slot(0, None, Some(currentSlot)))
-//              TuringMachine(currentSlot = currentSlot.left.get, op.continueState, program, steps + 1)
-//          }
-//
-//        case Right =>
-//
-//          currentSlot.right match {
-//
-//            case Some(rightSlot) =>
-//              //println("Move right - existing slot")
-//              TuringMachine(currentSlot = rightSlot, op.continueState, program, steps + 1)
-//
-//            case None =>
-//              //println("Move right - new slot")
-//              currentSlot.right = Some(Slot(0, Some(currentSlot), None))
-//              TuringMachine(currentSlot.right.get, op.continueState, program, steps + 1)
-//          }
-//
-//      }
+        case Left =>
+
+          // Current slot is 0 to length - 1
+          // If it is 0 then there is no left slot and we need to add one
+          // Adding a slot to the left of the IndSeq means the current slot will increment by 1
+          // so we need to take care of that manually
+
+          if(currentSlot > 0) {
+            //println("Move left - existing slot")
+            TuringMachine(currentSlot = currentSlot - 1, updatedSlots, op.continueState, program, steps + 1)
+          }
+          else {
+            //println("Move left - new slot")
+            val addedLeft = updatedSlots.:+(0)
+            TuringMachine(currentSlot = currentSlot + 1, addedLeft, op.continueState, program, steps + 1)
+          }
+
+        case Right =>
+
+          if(currentSlot < (slots.length - 1)) {
+              //println("Move right - existing slot")
+              TuringMachine(currentSlot = currentSlot + 1, updatedSlots, op.continueState, program, steps + 1)
+          } else {
+            //println("Move right - new slot")
+            val addedRight = updatedSlots.+:(0)
+            TuringMachine(currentSlot = currentSlot + 1, addedRight, op.continueState, program, steps + 1)
+          }
+
+      }
 
     }
 
@@ -318,7 +315,7 @@ object Day25ScalaZ {
 
   def main(args : Array[String]) : Unit = {
 
-    val sample1 = TuringMachine(0, IndSeq.fromSeq(List.empty[Int]), 'a', Program('a', 6, sampleStates))
+    val sample1 = TuringMachine(0, IndSeq.fromSeq(List(0)), 'a', Program('a', 6, sampleStates))
 
     val checkSumSample1 = sample1.runAllStepsGetCount()
 
@@ -328,7 +325,7 @@ object Day25ScalaZ {
 
     val step1 = TuringMachine.fromInputStrings(inputLines)
 
-    val step1TuringMachine = TuringMachine(0, IndSeq.fromSeq(List.empty[Int]), step1.get.startState, step1.get)
+    val step1TuringMachine = TuringMachine(0, IndSeq.fromSeq(List(0)), step1.get.startState, step1.get)
 
     val step1Result = step1TuringMachine.runAllStepsGetCount()
 
