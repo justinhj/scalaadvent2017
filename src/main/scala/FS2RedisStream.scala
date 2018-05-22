@@ -8,10 +8,11 @@ and then prints them out
 
  */
 
+import cats.Monad
 import cats.effect.{Effect, IO}
 import com.redis._
 import com.typesafe.scalalogging.LazyLogging
-import fs2.{async, Stream}
+import fs2.{Pipe, Stream, async}
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
@@ -61,7 +62,19 @@ object FS2RedisStream extends LazyLogging {
       row <- q.dequeue.rethrow // [3]
     } yield row
 
+  def rows2[F[_]](h : RedisSubscriber) (implicit F: Effect[F], ec: ExecutionContext): Stream[F,PubSubMessage] =
+    Stream.eval(async.unboundedQueue[F, Either[Throwable, PubSubMessage]]).flatMap(
+      q =>
+        Stream.eval(
+          F.delay(
+            h.setCallback(e => async.unsafeRunAsync(q.enqueue1(e))(_ => IO.unit)))).flatMap {
+              case _ =>
+                q.dequeue.rethrow.map(row => row)
+            })
+
   def main(args : Array[String]) : Unit = {
+
+    //def debug[A](prefix: String): Pipe[IO,A,A] = a => a.evalMap
 
     Try(new RedisClient("127.0.0.1", 6379)) match {
 
