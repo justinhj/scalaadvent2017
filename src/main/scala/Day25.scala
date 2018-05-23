@@ -280,7 +280,8 @@ object Day25 {
 
       def runStep(machine: TuringMachine) : TuringMachine = {
 
-        //println(s"step ${machine.steps}")
+        if(machine.steps % 10000 == 0)
+          println(s"step ${machine.steps}")
 
         if(machine.steps == program.checksumAtStep) machine
         else {
