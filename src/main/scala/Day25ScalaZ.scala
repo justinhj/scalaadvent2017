@@ -4,6 +4,8 @@ import scala.util.Try
 import scalaz._, Scalaz._
 
 // Run a program on a turing machine, using the ScalaZ IndSeq which is an instance of a FingerTree
+// This takes about two minutes to run compared to the mutable version in Day25.scala that only takes
+// a fraction of a second
 
 object Day25ScalaZ {
 
@@ -18,70 +20,6 @@ object Day25ScalaZ {
   case class State(zeroOp: Op, oneOp: Op)
 
   case class Program(startState: Char, checksumAtStep: Long, states : Map[Char, State])
-
-  // The tape is made up of linked slots
-  case class Slot(var value: Int = 0, var left: Option[Slot] = None, var right: Option[Slot] = None) {
-
-    def leftMostSlot(slot: Slot) : Slot = {
-
-      slot.left match {
-        case Some(leftOfMe) => leftMostSlot(leftOfMe)
-        case None => slot
-      }
-
-    }
-
-    // not stack safe
-    def printTapeToRight(slot: Slot) : Unit = {
-
-      println(s"${slot.value} ")
-
-      slot.right match {
-        case Some(r) =>
-          printTapeToRight(r)
-
-        case None =>
-          println("fin")
-
-      }
-
-
-
-    }
-
-    def printTape() : Unit = {
-
-      val left = leftMostSlot(this)
-
-      printTapeToRight(left)
-
-    }
-
-    def countSetValuesToRight(slot: Slot) : Int = {
-
-      val sum = slot.right match {
-
-        case Some(s) => countSetValuesToRight(s)
-
-        case None => 0
-
-      }
-
-      slot.value + sum
-
-    }
-
-
-    // get the count of the bits
-    def count() : Int = {
-
-      val leftSlot = leftMostSlot(this)
-
-      countSetValuesToRight(leftSlot)
-
-    }
-
-  }
 
   object TuringMachine {
 
@@ -224,6 +162,24 @@ object Day25ScalaZ {
 
   case class TuringMachine(currentSlot: Int, slots : IndSeq[Int], currentState: Char, program: Program, steps : Int = 0) {
 
+    override def toString: String = {
+
+      val start = s"steps: $steps state: $currentState slots:"
+
+      val end = slots.foldLeft(("", 0)) {
+
+        case ((acc, count), slot) =>
+
+          if(count == currentSlot) {
+            (acc ++ s"[$slot],", count + 1)
+          }
+          else
+            (acc ++ s"$slot,", count + 1)
+      }
+
+      start ++ end._1
+    }
+
     // execute an operation
 
     def executeOp(op: Op) : TuringMachine = {
@@ -247,8 +203,8 @@ object Day25ScalaZ {
           }
           else {
             //println("Move left - new slot")
-            val addedLeft = updatedSlots.:+(0)
-            TuringMachine(currentSlot = currentSlot + 1, addedLeft, op.continueState, program, steps + 1)
+            val addedLeft = updatedSlots.+:(0)
+            TuringMachine(currentSlot = currentSlot, addedLeft, op.continueState, program, steps + 1)
           }
 
         case Right =>
@@ -258,7 +214,7 @@ object Day25ScalaZ {
               TuringMachine(currentSlot = currentSlot + 1, updatedSlots, op.continueState, program, steps + 1)
           } else {
             //println("Move right - new slot")
-            val addedRight = updatedSlots.+:(0)
+            val addedRight = updatedSlots.:+(0)
             TuringMachine(currentSlot = currentSlot + 1, addedRight, op.continueState, program, steps + 1)
           }
 
@@ -284,7 +240,10 @@ object Day25ScalaZ {
 
       def runStep(machine: TuringMachine) : TuringMachine = {
 
-        //println(s"step ${machine.steps}")
+        //println(machine)
+
+        if(machine.steps % 100000 == 0)
+          println(".")
 
         if(machine.steps == program.checksumAtStep) machine
         else {
@@ -296,9 +255,8 @@ object Day25ScalaZ {
 
       val finalMachine = runStep(this)
 
-      //finalMachine.currentSlot.printTape()
-
-      finalMachine.slots.length
+      val what = finalMachine.slots.filter(n => n == 1)
+      what.length
     }
 
 
