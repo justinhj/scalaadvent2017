@@ -28,28 +28,41 @@ object Day25 {
     }
 
     // not stack safe
-    def printTapeToRight(slot: Slot) : Unit = {
+    def tapeToString(slot: Slot, highlightSlot: Slot, currentSlot: Int) : String = {
 
-      println(s"${slot.value} ")
+      var s = if(highlightSlot == slot)
+                s"[${slot.value}],"
+              else
+                s"${slot.value},"
 
       slot.right match {
         case Some(r) =>
-          printTapeToRight(r)
+          s ++ tapeToString(r, highlightSlot, currentSlot + 1)
 
         case None =>
-          println("fin")
+          s
 
       }
 
-
-
     }
 
-    def printTape() : Unit = {
+    def getTapeString(currentSlot : Slot) : String = {
 
       val left = leftMostSlot(this)
 
-      printTapeToRight(left)
+      val s = tapeToString(left, currentSlot, 0)
+
+      s
+
+    }
+
+    def printTape(currentSlot : Slot) : Unit = {
+
+      val left = leftMostSlot(this)
+
+      val s = tapeToString(left, currentSlot, 0)
+
+      println(s)
 
     }
 
@@ -220,6 +233,15 @@ object Day25 {
 
   case class TuringMachine(currentSlot: Slot, currentState: Char, program: Program, steps : Int = 0) {
 
+    override def toString: String = {
+
+      val start = s"steps: $steps state: $currentState slots:"
+
+      val end = currentSlot.getTapeString(currentSlot)
+
+      start ++ end
+    }
+
     // execute an operation
 
     def executeOp(op: Op) : TuringMachine = {
@@ -280,8 +302,7 @@ object Day25 {
 
       def runStep(machine: TuringMachine) : TuringMachine = {
 
-        if(machine.steps % 10000 == 0)
-          println(s"step ${machine.steps}")
+        //println(machine)
 
         if(machine.steps == program.checksumAtStep) machine
         else {
