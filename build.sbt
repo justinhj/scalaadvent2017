@@ -27,6 +27,7 @@ libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.2.23"
 
 libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.3"
 
+libraryDependencies += "de.sciss" %% "fingertree" % "1.5.2"
 
 sourceGenerators in Test += Def.task {
   val file = (sourceManaged in Test).value / "amm.scala"
