@@ -1,6 +1,5 @@
 import scala.io.Source
 import scala.util.Try
-import scalaz._, Scalaz._
 
 // Run a program on a turing machine, using an immutable vector for the turing tape
 
