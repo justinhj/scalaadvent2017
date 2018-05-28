@@ -1,10 +1,148 @@
+import scala.util.Try
+
 object Day19 {
+
+  import scalaz._, Scalaz._
+
+  // Network can simply be Vector of Vectors
+
+  type Network = Vector[Vector[Char]]
+
+  val sampleNetwork = """
+              |     |
+              |     |  +--+
+              |     A  |  C
+              | F---|----E|--+
+              |     |  |  |  D
+              |     +B-+  +--+
+""".stripMargin
+
+  def networkFromString(input : String) : Network = {
+
+    val rows : Vector[String] = input.split("\n").toVector
+
+    rows.map {
+      row =>
+        row.toVector
+    }
+
+  }
+
+  case class Location(row: Int, col: Int)
+
+  def getStartPosition(network: Network) : Option[Location] = {
+
+    // Handle that the first line is empty
+
+    val startLine = if(network(0).size == 0) 1 else 0
+
+    // Find the first down line
+
+    val index = network(startLine).indexOf('|')
+
+    if(index > 0) Some(Location(startLine, index))
+    else None
+  }
+
+  sealed trait Direction
+  case object Left extends Direction
+  case object Right extends Direction
+  case object Up extends Direction
+  case object Down extends Direction
+
+  // give a direction and location return the next location
+  def move(direction: Direction, location: Location) : Location = {
+
+    direction match {
+      case Up => location.copy(row = location.row - 1)
+      case Down => location.copy(row = location.row + 1)
+      case Left => location.copy(col = location.col - 1)
+      case Right => location.copy(col = location.col + 1)
+    }
+
+  }
+
+
+  def getCharAtPos(network: Network, pos: Location) = {
+    Try{network(pos.row)(pos.col)}.getOrElse(' ')
+  }
+
+  def canMoveTo(char: Char) = {
+
+    char match {
+      case '|' => true
+      case '-' => true
+      case letter : Char if letter >= 'A' && letter <= 'Z' => true
+
+      case _ => false
+    }
+
+  }
+
+  // Walk the network and when you reach the end return the letters seen
+  def walkNetwork(network: Network, curPos: Location, curDir: Direction, letters: String) : String = {
+
+    // What happens on each step is based on what is there
+
+    val tile = getCharAtPos(network, curPos)
+
+    tile match {
+
+      // Direction indicators mean just keep going
+      case '|' =>
+        walkNetwork(network, move(curDir, curPos), curDir, letters)
+      case '-' =>
+        walkNetwork(network, move(curDir, curPos), curDir, letters)
+
+      // In the case of a letter keep going but store the letter
+      case letter : Char if letter >= 'A' && letter <= 'Z' =>
+        walkNetwork(network, move(curDir, curPos), curDir, letter +: letters)
+
+      // We blundered into empty space so that's the end
+      case ' ' =>
+        letters
+
+      // This is the only tricky one because we must take a different
+      // direction depending on what's around ...
+      case '+' =>
+        if(curDir == Down || curDir == Up) {
+          val moveLeft = move(Left, curPos)
+          val whatsLeft = getCharAtPos(network, moveLeft)
+
+          if(canMoveTo(whatsLeft))
+            walkNetwork(network, moveLeft, Left, letters)
+          else
+            walkNetwork(network, move(Right, curPos), Right, letters)
+
+        }
+        else {
+          val moveUp = move(Up, curPos)
+          val whatsUp = getCharAtPos(network, moveUp)
+
+          if(canMoveTo(whatsUp))
+            walkNetwork(network, moveUp, Up, letters)
+          else
+            walkNetwork(network, move(Down, curPos), Down, letters)
+
+        }
+
+    }
+
+  }
 
   def main(args: Array[String]) : Unit = {
 
-    println("Hello")
+    // Sample
 
+    val network = networkFromString(sampleNetwork)
 
+    getStartPosition(network).map {
+      start =>
+        val result = walkNetwork(network, start, Down, "")
+        println(s"Sample result $result")
+
+    }
+    
   }
 
 
