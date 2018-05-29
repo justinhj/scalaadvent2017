@@ -1,3 +1,7 @@
+import java.nio.charset.Charset
+
+import better.files.{Resource, UnicodeCharset}
+
 import scala.util.Try
 
 object Day19 {
@@ -100,7 +104,7 @@ object Day19 {
 
       // We blundered into empty space so that's the end
       case ' ' =>
-        letters
+        letters.reverse
 
       // This is the only tricky one because we must take a different
       // direction depending on what's around ...
@@ -142,7 +146,21 @@ object Day19 {
         println(s"Sample result $result")
 
     }
-    
+
+    // Step 1
+
+    val step1SampleNetwork = Resource.getAsString("input19.txt")(Charset.forName("US-ASCII"))
+
+    val step1Network = networkFromString(step1SampleNetwork)
+
+    getStartPosition(step1Network).map {
+      start =>
+        val result = walkNetwork(step1Network, start, Down, "")
+        println(s"Step1 result $result")
+
+    }
+
+
   }
 
 
