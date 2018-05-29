@@ -1,7 +1,5 @@
 import java.nio.charset.Charset
-
-import better.files.{Resource, UnicodeCharset}
-
+import better.files.Resource
 import scala.util.Try
 
 object Day19 {
