@@ -84,7 +84,7 @@ object Day19 {
   }
 
   // Walk the network and when you reach the end return the letters seen
-  def walkNetwork(network: Network, curPos: Location, curDir: Direction, letters: String) : String = {
+  def walkNetwork(network: Network, curPos: Location, curDir: Direction, letters: String, steps: Int) : (String, Int) = {
 
     // What happens on each step is based on what is there
 
@@ -94,17 +94,17 @@ object Day19 {
 
       // Direction indicators mean just keep going
       case '|' =>
-        walkNetwork(network, move(curDir, curPos), curDir, letters)
+        walkNetwork(network, move(curDir, curPos), curDir, letters, steps + 1)
       case '-' =>
-        walkNetwork(network, move(curDir, curPos), curDir, letters)
+        walkNetwork(network, move(curDir, curPos), curDir, letters, steps + 1)
 
       // In the case of a letter keep going but store the letter
       case letter : Char if letter >= 'A' && letter <= 'Z' =>
-        walkNetwork(network, move(curDir, curPos), curDir, letter +: letters)
+        walkNetwork(network, move(curDir, curPos), curDir, letter +: letters, steps + 1)
 
       // We blundered into empty space so that's the end
       case ' ' =>
-        letters.reverse
+        (letters.reverse, steps)
 
       // This is the only tricky one because we must take a different
       // direction depending on what's around ...
@@ -114,9 +114,9 @@ object Day19 {
           val whatsLeft = getCharAtPos(network, moveLeft)
 
           if(canMoveTo(whatsLeft))
-            walkNetwork(network, moveLeft, Left, letters)
+            walkNetwork(network, moveLeft, Left, letters, steps + 1)
           else
-            walkNetwork(network, move(Right, curPos), Right, letters)
+            walkNetwork(network, move(Right, curPos), Right, letters, steps + 1)
 
         }
         else {
@@ -124,9 +124,9 @@ object Day19 {
           val whatsUp = getCharAtPos(network, moveUp)
 
           if(canMoveTo(whatsUp))
-            walkNetwork(network, moveUp, Up, letters)
+            walkNetwork(network, moveUp, Up, letters, steps + 1)
           else
-            walkNetwork(network, move(Down, curPos), Down, letters)
+            walkNetwork(network, move(Down, curPos), Down, letters, steps + 1)
 
         }
 
@@ -142,8 +142,8 @@ object Day19 {
 
     getStartPosition(network).map {
       start =>
-        val result = walkNetwork(network, start, Down, "")
-        println(s"Sample result $result")
+        val (result, steps) = walkNetwork(network, start, Down, "", 0)
+        println(s"Sample result $result $steps")
 
     }
 
@@ -155,8 +155,8 @@ object Day19 {
 
     getStartPosition(step1Network).map {
       start =>
-        val result = walkNetwork(step1Network, start, Down, "")
-        println(s"Step1 result $result")
+        val (result, steps) = walkNetwork(step1Network, start, Down, "", 0)
+        println(s"Step1 result $result $steps")
 
     }
 
