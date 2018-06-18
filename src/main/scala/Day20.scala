@@ -1,11 +1,168 @@
+import java.nio.charset.Charset
 
+import scala.util.Try
+import scalaz._
+import Scalaz._
+import better.files.Resource
 
 object Day20 {
 
+  case class V3(x: Int, y: Int, z: Int) {
+
+    def +(that: V3) = V3(x + that.x, y + that.y, z + that.z)
+    def magnitude = Math.abs(x) + Math.abs(y) + Math.abs(z)
+
+    override def toString: String = s"$x,$y,$z"
+
+  }
+
+  // Particle is three vectors and an identifier
+  case class Particle(id: Int, p: V3, v: V3, a: V3) {
+
+    override def toString: String = s"p=<$p>, v=<$v>, a=<$a>"
+
+    def dist : Int = p.magnitude
+
+    def tick : Particle = {
+
+      val newV = v + a
+
+      Particle(
+        id,
+        p + newV,
+        newV,
+        a
+      )
+    }
+
+  }
+
+  private val parsePattern = """p=<([-]*[0-9]+),([-]*[0-9]+),([-]*[0-9]+)>, v=<([-]*[0-9]+),([-]*[0-9]+),([-]*[0-9]+)>, a=<([-]*[0-9]+),([-]*[0-9]+),([-]*[0-9]+)>""".r
+
+  def parseParticle(s: String) : Option[Particle] = {
+
+    Try {
+      val parsePattern(px,py,pz,vx,vy,vz,ax,ay,az) = s
+      Particle(0, V3(px.toInt,py.toInt,pz.toInt), V3(vx.toInt,vy.toInt,vz.toInt), V3(ax.toInt,ay.toInt,az.toInt))
+    }.toOption
+  }
+
+  def parseParticles(s:String) : List[Particle] = {
+
+    val particles = s.lines
+
+    val particleList = particles.flatMap(parseParticle).toList
+
+    // set the ids based on their position in the list
+
+    particleList.zipWithIndex.map{
+      case (p, n) => p.copy(id = n)
+    }
+  }
+
+  def iterate(particles: List[Particle]) : List[Particle] = {
+    particles.map(_.tick)
+  }
 
   def main(args: Array[String]): Unit = {
 
-    println("hello")
+    val parsed = parseParticle("p=<-317,1413,1507>, v=<19,-102,-108>, a=<1,-3,-3>")
+
+    println(s"parsed $parsed")
+
+    val sample = """p=<3,0,0>, v=<2,0,0>, a=<-1,0,0>
+                   |p=<4,0,0>, v=<0,0,0>, a=<-2,0,0>""".stripMargin
+
+    val sampleParticles = parseParticles(sample)
+
+    val tickTest1 = sampleParticles(0).tick.toString
+
+    // Basic test of tick...
+    assert(tickTest1 === "p=<4,0,0>, v=<1,0,0>, a=<-1,0,0>")
+
+    println(s"parsed $sampleParticles")
+
+    (1 to 40).foldLeft(sampleParticles) {
+      case (particles, _) =>
+
+        //println(particles)
+
+        val newP = iterate(particles)
+
+        println(newP)
+
+        val nearest: Particle = newP.minBy(p => p.p.magnitude)
+
+        println(s"nearest ${nearest.id} $nearest dist ${nearest.p.magnitude}")
+
+        newP
+    }
+
+    val step1Particles = parseParticles(Resource.getAsString("input20.txt")(Charset.forName("US-ASCII")))
+
+
+    // A lazy way to get the answer is to run it for a while, see which element stabilizes as the nearest and see if it
+    // is the right answer. I'm lazy so I did that.
+
+    (1 to 100).foldLeft(step1Particles) {
+      case (particles, _) =>
+
+        //println(particles)
+
+        val newP = iterate(particles)
+
+        println(newP)
+
+        val nearest: Particle = newP.minBy(p => p.p.magnitude)
+
+        println(s"nearest ${nearest.id} $nearest dist ${nearest.p.magnitude}")
+
+        newP
+    }
+
+    // Step 2
+
+    // This time we will iterate, removing colliding particles and discover the number of particles once the collisions stop
+
+    // Step 2 sample
+
+    val step2Sample = """p=<-6,0,0>, v=<3,0,0>, a=<0,0,0>
+p=<-4,0,0>, v=<2,0,0>, a=<0,0,0>
+p=<-2,0,0>, v=<1,0,0>, a=<0,0,0>
+p=<3,0,0>, v=<-1,0,0>, a=<0,0,0>"""
+
+    val step2SampleParticles = parseParticles(step2Sample)
+
+    // Our lazy way of iterating until the answer stabilizes is good here too,
+    // the answer for the sample and the step2 are found by running 1000 steps and
+    // entering the value...
+
+    //(1 to 1000).foldLeft(step2SampleParticles) {
+    (1 to 1000).foldLeft(step1Particles) {
+      case (particles, _) =>
+
+        println(s"Remaining particles ${particles.size}")
+
+        val newP = iterate(particles)
+
+        // Create a map of particle position to list of particle indices
+        val collideMap = newP.foldLeft(Map.empty[V3, List[Particle]]) {
+
+          case (acc, p) =>
+
+            val lp = acc.getOrElse(p.p, List.empty[Particle])
+
+            acc updated (p.p, p +: lp)
+        }
+
+        // remaining particles are those that occur once only in the map
+
+        collideMap.values.toList.filterNot{_.size > 1}.flatten
+
+
+    }
+
+
 
   }
 
