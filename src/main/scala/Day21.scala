@@ -1,9 +1,73 @@
 object Day21 {
 
+  // A grid consists of a vector of rows. Each row is a vector of pixels
+
+  type Pixel = Char
+
+  type Grid = Vector[Vector[Pixel]]
+
+  object Grid {
+
+    /*
+
+      example input ../.#
+      gives a grid 2x2
+
+     */
+
+    def gridFromString(in: String) : Grid = {
+
+      val rows: Array[String] = in.split("/")
+
+      def rowToPixels(r: String) : Vector[Pixel] = {
+        r.toVector
+      }
+
+      rows.map(rowToPixels(_)).toVector
+    }
+
+  }
+
+  import Grid.gridFromString
+
+  // A transform is Grid that can be matched against another grid to create that new image
+
+  trait Transform {
+    def transform(input: Grid): Grid
+  }
+
+  // 
+
+  // Given the string encoding of a grid create a transform including the flipped and mirrored grids
+
+  case class MultiTransform(transformEncoding : String) extends Transform {
+
+    val inputOutput = transformEncoding.split(" => ")
+    val (inputStr, outputStr) = (inputOutput(0), inputOutput(1))
+
+    val inputGrid : Grid = gridFromString(inputStr)
+    val outputGrid : Grid = gridFromString(outputStr)
+
+    def transform(input: Grid): Grid = {
+
+      if(input == inputGrid) outputGrid
+      else input
+
+    }
+  }
+
   def main(args: Array[String]): Unit = {
 
     println("day21 lol")
 
+    val dudical = MultiTransform("../.# => ##./#../...")
+
+    val test1Grid = gridFromString("../.#")
+
+    val dudicalTransformed = dudical.transform(test1Grid)
+
+    var x = 1
+    x = 2
 
 
   }
