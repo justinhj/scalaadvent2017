@@ -32,6 +32,17 @@ object Day21 {
       in.map(_.reverse)
     }
 
+    def getNthColumn(n: Int, in: Grid) : Vector[Pixel] = {
+      in.map(r => r(n))
+    }
+
+    // rotate grid clockwise
+    // method here is that each row of the new grid becomes each column from the original grid
+
+    def rotateGrid(in: Grid) : Grid =
+      in.indices.map(getNthColumn(_, in)).toVector
+
+
   }
 
   import Grid._
@@ -72,10 +83,25 @@ object Day21 {
 
     assert(dudicalTransformed == gridFromString("##./#../..."))
 
+    // test flip
     val t1 = gridFromString("###/#..")
     val t1flipped = gridFromString("###/..#")
 
     assert(flipGrid(t1) == t1flipped)
+
+      /*
+      #..   ###
+      #.#   ..#
+      ##.   .#.
+       */
+
+    // test rotate
+    val r1 = gridFromString("#../#.#/##.")
+    val r1Rotated = gridFromString("###/..#/.#.")
+
+    val actual = rotateGrid(r1)
+
+    assert(actual == r1Rotated)
 
     var x = 1
     x = 2
