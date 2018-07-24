@@ -26,9 +26,15 @@ object Day21 {
       rows.map(rowToPixels(_)).toVector
     }
 
+    // flip the input grid (along the vertical axis)
+    def flipGrid(in: Grid) : Grid = {
+
+      in.map(_.reverse)
+    }
+
   }
 
-  import Grid.gridFromString
+  import Grid._
 
   // A transform is Grid that can be matched against another grid to create that new image
 
@@ -36,7 +42,7 @@ object Day21 {
     def transform(input: Grid): Grid
   }
 
-  // 
+  //
 
   // Given the string encoding of a grid create a transform including the flipped and mirrored grids
 
@@ -58,13 +64,18 @@ object Day21 {
 
   def main(args: Array[String]): Unit = {
 
-    println("day21 lol")
-
     val dudical = MultiTransform("../.# => ##./#../...")
 
     val test1Grid = gridFromString("../.#")
 
     val dudicalTransformed = dudical.transform(test1Grid)
+
+    assert(dudicalTransformed == gridFromString("##./#../..."))
+
+    val t1 = gridFromString("###/#..")
+    val t1flipped = gridFromString("###/..#")
+
+    assert(flipGrid(t1) == t1flipped)
 
     var x = 1
     x = 2
