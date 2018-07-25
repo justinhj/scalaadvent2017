@@ -1,3 +1,7 @@
+import java.nio.charset.Charset
+
+import Day21.MultiTransform
+
 object Day21 {
 
   import better.files.Resource
@@ -9,6 +13,10 @@ object Day21 {
 
   type Grid = Vector[Vector[Pixel]]
 
+  // When splitting the grid we return a vector of vector of grids
+
+  type GridOfGrids = Vector[Vector[Grid]]
+
   object Grid {
 
     /*
@@ -18,11 +26,11 @@ object Day21 {
 
      */
 
-    def gridFromString(in: String) : Grid = {
+    def gridFromString(in: String): Grid = {
 
       val rows: Array[String] = in.split("/")
 
-      def rowToPixels(r: String) : Vector[Pixel] = {
+      def rowToPixels(r: String): Vector[Pixel] = {
         r.toVector
       }
 
@@ -30,24 +38,24 @@ object Day21 {
     }
 
     // flip the input grid (along the vertical axis)
-    def flipGrid(in: Grid) : Grid = {
+    def flipGrid(in: Grid): Grid = {
 
       in.map(_.reverse)
     }
 
-    def getNthColumn(n: Int, in: Grid) : Vector[Pixel] = {
+    def getNthColumn(n: Int, in: Grid): Vector[Pixel] = {
       in.map(r => r(n))
     }
 
     // rotate grid clockwise
     // method here is that each row of the new grid becomes each column from the original grid
 
-    def rotateGrid(in: Grid) : Grid =
+    def rotateGrid(in: Grid): Grid =
       in.indices.map(getNthColumn(_, in)).toVector
 
     // Given a list of rules and a grid, transform the grid
 
-    def iterateGrid(rules: List[MultiTransform], input: Grid) : Grid = {
+    def enhanceGrid(rules: List[MultiTransform], input: Grid): Grid = {
 
       rules match {
 
@@ -60,7 +68,7 @@ object Day21 {
               g
 
             case None =>
-              iterateGrid(rest, input)
+              enhanceGrid(rest, input)
           }
 
         case Nil =>
@@ -71,6 +79,20 @@ object Day21 {
 
     }
 
+    def splitGrid(grid: Grid) : GridOfGrids = {
+      ???
+    }
+
+    // Iterate the grid one step
+
+    def iterate(rules: List[MultiTransform], input: Grid): Grid = {
+
+      val split = splitGrid(input)
+
+
+
+      ???
+    }
   }
 
   import Grid._
@@ -79,22 +101,33 @@ object Day21 {
 
   case class MultiTransform(transformEncoding : String) {
 
-    val inputOutput = transformEncoding.split(" => ")
-    val (inputStr, outputStr) = (inputOutput(0), inputOutput(1))
+    private val inputOutput = transformEncoding.split(" => ")
+    private val (inputStr, outputStr) = (inputOutput(0), inputOutput(1))
 
     val inputGrid : Grid = gridFromString(inputStr)
     val outputGrid : Grid = gridFromString(outputStr)
 
+    // We want a list of the original input, the original input rotated 3 times
+    // the flipped input, and that input rotated 3 times ...
+
+    private val r1 = rotateGrid(inputGrid)
+    private val r2 = rotateGrid(r1)
+    private val r3 = rotateGrid(r2)
+
+    private val flippedGrid = flipGrid(inputGrid)
+
+    private val fr1 = rotateGrid(flippedGrid)
+    private val fr2 = rotateGrid(fr1)
+    private val fr3 = rotateGrid(fr2)
+
+    private val all = List(inputGrid, r1, r2, r3, flippedGrid, fr1, fr2, fr3)
+
     def transform(input: Grid): Option[Grid] = {
 
-      // TODO handle the flip and rotate
-      if(input == inputGrid) Some(outputGrid)
-      else None
+      all.iterator.find(_ == input).map{_ => outputGrid}
 
     }
   }
-
-
 
   def main(args: Array[String]): Unit = {
 
@@ -104,7 +137,7 @@ object Day21 {
 
     val dudicalTransformed = dudical.transform(test1Grid)
 
-    assert(dudicalTransformed == Some(gridFromString("##./#../...")))
+    assert(dudicalTransformed.contains(gridFromString("##./#../...")))
 
     // test flip
     val t1 = gridFromString("###/#..")
@@ -131,11 +164,11 @@ object Day21 {
 
     val sampleTransform = List(MultiTransform(sampleRule1), MultiTransform(sampleRule2))
 
-    val sampleIterate1 = iterateGrid(sampleTransform, gridFromString(".#./..#/###"))
+    val sampleIterate1 = enhanceGrid(sampleTransform, gridFromString(".#./..#/###"))
 
     println(sampleIterate1)
 
-
+    val rulesString = Resource.getAsString("input21.txt")(Charset.forName("US-ASCII")).split("\n")
 
 
     var x = 1
