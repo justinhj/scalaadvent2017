@@ -1,21 +1,21 @@
 import java.nio.charset.Charset
 
-import Day21.MultiTransform
-
 object Day21 {
 
   import better.files.Resource
-
+  import scalaz._, Scalaz._
 
   // A grid consists of a vector of rows. Each row is a vector of pixels
 
   type Pixel = Char
 
-  type Grid = Vector[Vector[Pixel]]
+  type VectorVector[A] = Vector[Vector[A]]
+
+  type Grid = VectorVector[Pixel]
 
   // When splitting the grid we return a vector of vector of grids
 
-  type GridOfGrids = Vector[Vector[Grid]]
+  type GridOfGrids = VectorVector[Grid]
 
   object Grid {
 
@@ -80,18 +80,82 @@ object Day21 {
     }
 
     def splitGrid(grid: Grid) : GridOfGrids = {
-      ???
+
+      if(grid.size % 3 == 0) {
+        // split into 3's
+
+        val newSize = grid.size / 3
+
+        val dafuck: Vector[Vector[Vector[Vector[Pixel]]]] = (0 until newSize).map {
+
+          row =>
+
+            (0 until newSize).map {
+
+              col =>
+
+                (0 until 3).map {
+
+                  r =>
+
+                    (0 until 3).map {
+
+                      c =>
+
+                        grid(row * 3 + r)(col * 3 + c)
+
+                    }.toVector
+
+                }.toVector
+
+            }.toVector
+
+
+        }.toVector
+
+
+        dafuck
+
+      }
+      else {
+        // split into 2's
+
+        val splitRows: Vector[Vector[Vector[Pixel]]] = grid.map(_.grouped(2).toVector)
+
+        val groupedRows: Vector[Vector[Vector[Vector[Pixel]]]] = splitRows.grouped(2).toVector
+
+        groupedRows
+
+      }
+
+
+    }
+
+    // Combine a grid of grids to a grid
+
+    def combine(g : GridOfGrids) : Grid = {
+
+      val what: Vector[Vector[Pixel]] = g.map(_.flatten).flatten
+      what
+
     }
 
     // Iterate the grid one step
 
     def iterate(rules: List[MultiTransform], input: Grid): Grid = {
 
-      val split = splitGrid(input)
+      val split: Vector[Vector[Grid]] = splitGrid(input)
 
+      val transformed: Vector[Vector[Grid]] = split.map {
+        row => 
+          row.map {
+            col: Grid => 
+              val w = enhanceGrid(rules, col)
+              w
+          }
+      }
 
-
-      ???
+      combine(transformed)
     }
   }
 
@@ -124,7 +188,17 @@ object Day21 {
 
     def transform(input: Grid): Option[Grid] = {
 
-      all.iterator.find(_ == input).map{_ => outputGrid}
+      if(input.size != all.head.size)
+        None
+      else {
+        all.iterator.find {
+          r =>
+            //println(s"compare $r with $input")
+            r === input
+        }.map{
+          _ =>
+            outputGrid}
+      }
 
     }
   }
@@ -162,14 +236,22 @@ object Day21 {
     val sampleRule1 = "../.# => ##./#../..."
     val sampleRule2 = ".#./..#/### => #..#/..../..../#..#"
 
-    val sampleTransform = List(MultiTransform(sampleRule1), MultiTransform(sampleRule2))
+    val sampleRules = List(MultiTransform(sampleRule1), MultiTransform(sampleRule2))
 
-    val sampleIterate1 = enhanceGrid(sampleTransform, gridFromString(".#./..#/###"))
+//    val sampleIterate1 = enhanceGrid(sampleRules, gridFromString(".#./..#/###"))
+//
+//    println(sampleIterate1)
 
-    println(sampleIterate1)
+    val rulesStrings = Resource.getAsString("input21.txt")(Charset.forName("US-ASCII")).split("\n")
 
-    val rulesString = Resource.getAsString("input21.txt")(Charset.forName("US-ASCII")).split("\n")
+    val rules = rulesStrings.map(MultiTransform(_)).toList
 
+    val sampleStart = gridFromString(".#./..#/###")
+
+    //val sampleStart2 = gridFromString("#..#/..../..../#..#")
+    val oopsie = iterate(sampleRules, sampleStart)
+
+    println(oopsie)
 
     var x = 1
     x = 2
