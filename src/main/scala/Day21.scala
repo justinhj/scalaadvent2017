@@ -1,5 +1,8 @@
 object Day21 {
 
+  import better.files.Resource
+
+
   // A grid consists of a vector of rows. Each row is a vector of pixels
 
   type Pixel = Char
@@ -42,22 +45,39 @@ object Day21 {
     def rotateGrid(in: Grid) : Grid =
       in.indices.map(getNthColumn(_, in)).toVector
 
+    // Given a list of rules and a grid, transform the grid
+
+    def iterateGrid(rules: List[MultiTransform], input: Grid) : Grid = {
+
+      rules match {
+
+        case rule :: rest =>
+
+          rule.transform(input) match {
+
+            case Some(g) =>
+              println(s"matched rule ${rule.inputGrid}")
+              g
+
+            case None =>
+              iterateGrid(rest, input)
+          }
+
+        case Nil =>
+          println("failed to match any rules")
+          input
+
+      }
+
+    }
 
   }
 
   import Grid._
 
-  // A transform is Grid that can be matched against another grid to create that new image
-
-  trait Transform {
-    def transform(input: Grid): Grid
-  }
-
-  //
-
   // Given the string encoding of a grid create a transform including the flipped and mirrored grids
 
-  case class MultiTransform(transformEncoding : String) extends Transform {
+  case class MultiTransform(transformEncoding : String) {
 
     val inputOutput = transformEncoding.split(" => ")
     val (inputStr, outputStr) = (inputOutput(0), inputOutput(1))
@@ -65,13 +85,16 @@ object Day21 {
     val inputGrid : Grid = gridFromString(inputStr)
     val outputGrid : Grid = gridFromString(outputStr)
 
-    def transform(input: Grid): Grid = {
+    def transform(input: Grid): Option[Grid] = {
 
-      if(input == inputGrid) outputGrid
-      else input
+      // TODO handle the flip and rotate
+      if(input == inputGrid) Some(outputGrid)
+      else None
 
     }
   }
+
+
 
   def main(args: Array[String]): Unit = {
 
@@ -81,7 +104,7 @@ object Day21 {
 
     val dudicalTransformed = dudical.transform(test1Grid)
 
-    assert(dudicalTransformed == gridFromString("##./#../..."))
+    assert(dudicalTransformed == Some(gridFromString("##./#../...")))
 
     // test flip
     val t1 = gridFromString("###/#..")
@@ -102,6 +125,18 @@ object Day21 {
     val actual = rotateGrid(r1)
 
     assert(actual == r1Rotated)
+
+    val sampleRule1 = "../.# => ##./#../..."
+    val sampleRule2 = ".#./..#/### => #..#/..../..../#..#"
+
+    val sampleTransform = List(MultiTransform(sampleRule1), MultiTransform(sampleRule2))
+
+    val sampleIterate1 = iterateGrid(sampleTransform, gridFromString(".#./..#/###"))
+
+    println(sampleIterate1)
+
+
+
 
     var x = 1
     x = 2
