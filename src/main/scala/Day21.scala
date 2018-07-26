@@ -19,6 +19,25 @@ object Day21 {
 
   object Grid {
 
+    def gridToString(g: Grid) : String = {
+
+      g.map {
+
+        row =>
+
+          val what = row.map {
+
+            c =>
+              c
+
+          }
+
+          what.mkString
+
+      }.mkString("\n")
+
+    }
+
     /*
 
       example input ../.#
@@ -38,9 +57,14 @@ object Day21 {
     }
 
     // flip the input grid (along the vertical axis)
-    def flipGrid(in: Grid): Grid = {
+    def flipVertical(in: Grid): Grid = {
 
       in.map(_.reverse)
+    }
+
+    def flipHorizontal(in: Grid): Grid = {
+
+      in.reverse
     }
 
     def getNthColumn(n: Int, in: Grid): Vector[Pixel] = {
@@ -50,8 +74,11 @@ object Day21 {
     // rotate grid clockwise
     // method here is that each row of the new grid becomes each column from the original grid
 
-    def rotateGrid(in: Grid): Grid =
-      in.indices.map(getNthColumn(_, in)).toVector
+    def rotateGrid(in: Grid): Grid = {
+      val rows = in.indices.map(getNthColumn(_, in).reverse)
+
+      rows.toVector
+    }
 
     // Given a list of rules and a grid, transform the grid
 
@@ -64,7 +91,6 @@ object Day21 {
           rule.transform(input) match {
 
             case Some(g) =>
-              println(s"matched rule ${rule.inputGrid}")
               g
 
             case None =>
@@ -120,11 +146,37 @@ object Day21 {
       else {
         // split into 2's
 
-        val splitRows: Vector[Vector[Vector[Pixel]]] = grid.map(_.grouped(2).toVector)
+        val newSize = grid.size / 2
 
-        val groupedRows: Vector[Vector[Vector[Vector[Pixel]]]] = splitRows.grouped(2).toVector
+        val dafuck: Vector[Vector[Vector[Vector[Pixel]]]] = (0 until newSize).map {
 
-        groupedRows
+          row =>
+
+            (0 until newSize).map {
+
+              col =>
+
+                (0 until 2).map {
+
+                  r =>
+
+                    (0 until 2).map {
+
+                      c =>
+
+                        grid(row * 2 + r)(col * 2 + c)
+
+                    }.toVector
+
+                }.toVector
+
+            }.toVector
+
+
+        }.toVector
+
+
+        dafuck
 
       }
 
@@ -147,9 +199,9 @@ object Day21 {
       val split: Vector[Vector[Grid]] = splitGrid(input)
 
       val transformed: Vector[Vector[Grid]] = split.map {
-        row => 
+        row =>
           row.map {
-            col: Grid => 
+            col: Grid =>
               val w = enhanceGrid(rules, col)
               w
           }
@@ -178,11 +230,11 @@ object Day21 {
     private val r2 = rotateGrid(r1)
     private val r3 = rotateGrid(r2)
 
-    private val flippedGrid = flipGrid(inputGrid)
+    private val flippedGrid = flipVertical(inputGrid)
 
-    private val fr1 = rotateGrid(flippedGrid)
-    private val fr2 = rotateGrid(fr1)
-    private val fr3 = rotateGrid(fr2)
+    private val fr1 = flipVertical(r1)
+    private val fr2 = flipVertical(r2)
+    private val fr3 = flipVertical(r3)
 
     private val all = List(inputGrid, r1, r2, r3, flippedGrid, fr1, fr2, fr3)
 
@@ -193,10 +245,12 @@ object Day21 {
       else {
         all.iterator.find {
           r =>
-            //println(s"compare $r with $input")
+            println(s"compare\n${gridToString(r)}\nwith\n${gridToString(input)}")
             r === input
         }.map{
-          _ =>
+          m =>
+            println(s"matched rule:\n${gridToString(m)}")
+
             outputGrid}
       }
 
@@ -217,7 +271,7 @@ object Day21 {
     val t1 = gridFromString("###/#..")
     val t1flipped = gridFromString("###/..#")
 
-    assert(flipGrid(t1) == t1flipped)
+    assert(flipVertical(t1) == t1flipped)
 
       /*
       #..   ###
@@ -227,11 +281,11 @@ object Day21 {
 
     // test rotate
     val r1 = gridFromString("#../#.#/##.")
-    val r1Rotated = gridFromString("###/..#/.#.")
+    val r1Rotated = gridFromString("###/#../.#.")
 
     val actual = rotateGrid(r1)
 
-    assert(actual == r1Rotated)
+    assert(actual === r1Rotated)
 
     val sampleRule1 = "../.# => ##./#../..."
     val sampleRule2 = ".#./..#/### => #..#/..../..../#..#"
@@ -251,7 +305,11 @@ object Day21 {
     //val sampleStart2 = gridFromString("#..#/..../..../#..#")
     val oopsie = iterate(sampleRules, sampleStart)
 
-    println(oopsie)
+    println("oopsie:\n" + gridToString(oopsie))
+
+    val oopsie2 = iterate(sampleRules, oopsie)
+
+    println("oopsie2:\n" + gridToString(oopsie2))
 
     var x = 1
     x = 2
