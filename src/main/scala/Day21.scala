@@ -72,7 +72,7 @@ object Day21 {
         r.toVector
       }
 
-      rows.map(rowToPixels(_)).toVector
+      rows.map(rowToPixels).toVector
     }
 
     // flip the input grid (along the vertical axis)
@@ -200,7 +200,7 @@ object Day21 {
 
     def combine(g : GridOfGrids) : Grid = {
 
-      g.map{ r =>
+      g.flatMap{ r =>
 
         val size = r.head.size
         //  println(s"size $size")
@@ -221,7 +221,7 @@ object Day21 {
 
             sideboob.flatten
         }
-      }.flatten
+      }
 
     }
 
@@ -350,7 +350,7 @@ object Day21 {
 
     val rulesStrings = Resource.getAsString("input21.txt")(Charset.forName("US-ASCII")).split("\n")
 
-    val rules = rulesStrings.map(MultiTransform(_)).toList
+    val rules = rulesStrings.map(MultiTransform).toList
 
     val sampleStart = gridFromString(".#./..#/###")
 
