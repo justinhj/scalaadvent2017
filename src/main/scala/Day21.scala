@@ -126,41 +126,7 @@ object Day21 {
 
     def splitGrid(grid: Grid) : GridOfGrids = {
 
-      if(grid.size % 3 == 0) {
-        // split into 3's
-
-        val newSize = grid.size / 3
-
-        (0 until newSize).map {
-
-          row =>
-
-            (0 until newSize).map {
-
-              col =>
-
-                (0 until 3).map {
-
-                  r =>
-
-                    (0 until 3).map {
-
-                      c =>
-
-                        grid(row * 3 + r)(col * 3 + c)
-
-                    }.toVector
-
-                }.toVector
-
-            }.toVector
-
-
-        }.toVector
-
-
-      }
-      else {
+      if(grid.size % 2 == 0) {
         // split into 2's
 
         val newSize = grid.size / 2
@@ -182,6 +148,38 @@ object Day21 {
                       c =>
 
                         grid(row * 2 + r)(col * 2 + c)
+
+                    }.toVector
+
+                }.toVector
+
+            }.toVector
+
+
+        }.toVector
+      }
+      else {
+        // split into 3's
+
+        val newSize = grid.size / 3
+
+        (0 until newSize).map {
+
+          row =>
+
+            (0 until newSize).map {
+
+              col =>
+
+                (0 until 3).map {
+
+                  r =>
+
+                    (0 until 3).map {
+
+                      c =>
+
+                        grid(row * 3 + r)(col * 3 + c)
 
                     }.toVector
 
@@ -278,13 +276,19 @@ object Day21 {
     private val r2 = rotateGrid(r1)
     private val r3 = rotateGrid(r2)
 
-    private val flippedGrid = flipVertical(inputGrid)
+    private val flippedGridVertical = flipVertical(inputGrid)
+    private val flippedGridHorizontal = flipHorizontal(inputGrid)
 
     private val fr1 = flipVertical(r1)
     private val fr2 = flipVertical(r2)
     private val fr3 = flipVertical(r3)
 
-    private val all = List(inputGrid, r1, r2, r3, flippedGrid, fr1, fr2, fr3)
+//    private val fh1 = flipHorizontal(r1)
+//    private val fh2 = flipHorizontal(r2)
+//    private val fh3 = flipHorizontal(r3)
+
+    private val all = List(inputGrid, r1, r2, r3, flippedGridVertical, flippedGridHorizontal,
+      fr1, fr2, fr3) //  fh1, fh2, fh3)
 
     def transform(input: Grid): Option[Grid] = {
 
@@ -385,6 +389,20 @@ object Day21 {
     val lightsOn = gridCountPixels(step1)
 
     println(s"lightsOn is $lightsOn")
+
+//    val before = "123/456/789"
+//
+//    val after = gridFromString("741/852/963")
+//
+//    val rotated = rotateGrid(gridFromString(before))
+//
+//    println("rotate test:\n" + gridToString(rotated))
+//
+//
+//    assert(rotated === after)
+
+
+
 
   }
 
