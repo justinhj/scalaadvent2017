@@ -19,23 +19,42 @@ object Day21 {
 
   object Grid {
 
-    def gridToString(g: Grid) : String = {
+    def gridCountPixels(g: Grid) : Int = {
+      g.map {
+        row =>
+          row.count(_ == '#')
+      }.sum
+    }
+
+    def gridOfGridsToString(g: GridOfGrids) : String = {
 
       g.map {
 
         row =>
 
-          val what = row.map {
+          row.map {
+            col =>
+              gridToString(col) + "\n"
+          }.mkString("\n")
 
-            c =>
-              c
+      }.mkString("\n\n")
 
-          }
 
-          what.mkString
+    }
+
+    def gridToString(g: Grid) : String = {
+
+      val s = s"${g.size}x${g.head.size}\n"
+
+      val s2 = g.map {
+
+        row =>
+
+          row.mkString
 
       }.mkString("\n")
 
+      s + s2
     }
 
     /*
@@ -112,7 +131,7 @@ object Day21 {
 
         val newSize = grid.size / 3
 
-        val dafuck: Vector[Vector[Vector[Vector[Pixel]]]] = (0 until newSize).map {
+        (0 until newSize).map {
 
           row =>
 
@@ -140,15 +159,13 @@ object Day21 {
         }.toVector
 
 
-        dafuck
-
       }
       else {
         // split into 2's
 
         val newSize = grid.size / 2
 
-        val dafuck: Vector[Vector[Vector[Vector[Pixel]]]] = (0 until newSize).map {
+        (0 until newSize).map {
 
           row =>
 
@@ -176,8 +193,6 @@ object Day21 {
         }.toVector
 
 
-        dafuck
-
       }
 
 
@@ -187,14 +202,34 @@ object Day21 {
 
     def combine(g : GridOfGrids) : Grid = {
 
-      val what: Vector[Vector[Pixel]] = g.map(_.flatten).flatten
-      what
+      g.map{ r =>
+
+        val size = r.head.size
+        //  println(s"size $size")
+
+        (0 until size).map {
+          index =>
+
+            val sideboob = r.zipWithIndex.foldLeft(Vector.empty[Vector[Char]]) {
+              case (acc, (s,ii)) =>
+
+                //println(s"s $s")
+
+                acc ++ s.zipWithIndex.filter {
+                  case (thing, i) =>
+                    index == i
+                }.map(_._1)
+            }
+
+            sideboob.flatten
+        }
+      }.flatten
 
     }
 
     // Iterate the grid one step
 
-    def iterate(rules: List[MultiTransform], input: Grid): Grid = {
+    def iterate1(rules: List[MultiTransform], input: Grid): Grid = {
 
       val split: Vector[Vector[Grid]] = splitGrid(input)
 
@@ -208,6 +243,19 @@ object Day21 {
       }
 
       combine(transformed)
+    }
+
+    def iterateN(rules: List[MultiTransform], input: Grid, n: Int) : Grid = {
+      if(n == 0)
+        input
+      else {
+
+        val newGrid = iterate1(rules, input)
+
+        println(s"$n\n${gridToString(newGrid)}\n")
+
+        iterateN(rules, newGrid, n - 1)
+      }
     }
   }
 
@@ -245,11 +293,11 @@ object Day21 {
       else {
         all.iterator.find {
           r =>
-            println(s"compare\n${gridToString(r)}\nwith\n${gridToString(input)}")
+            //println(s"compare\n${gridToString(r)}\nwith\n${gridToString(input)}")
             r === input
         }.map{
           m =>
-            println(s"matched rule:\n${gridToString(m)}")
+            //println(s"matched rule:\n${gridToString(m)}")
 
             outputGrid}
       }
@@ -302,18 +350,41 @@ object Day21 {
 
     val sampleStart = gridFromString(".#./..#/###")
 
-    //val sampleStart2 = gridFromString("#..#/..../..../#..#")
-    val oopsie = iterate(sampleRules, sampleStart)
+    val splitSample = gridFromString("AABB/AABB/CCDD/CCDD")
+    val split: GridOfGrids = splitGrid(splitSample)
+    println(s"grid of grids\n${gridOfGridsToString(split)}")
+    val combineSample = combine(split)
+    println(s"combine\n${gridToString(combineSample)}")
 
-    println("oopsie:\n" + gridToString(oopsie))
+    val splitSample2 = gridFromString("AAA/BBB/CCC")
+    val split2: GridOfGrids = splitGrid(splitSample2)
+    println(s"grid of grids 2\n${gridOfGridsToString(split2)}")
 
-    val oopsie2 = iterate(sampleRules, oopsie)
+    println(s"$split2")
 
-    println("oopsie2:\n" + gridToString(oopsie2))
+    val combineSample2 = combine(split2)
 
-    var x = 1
-    x = 2
+    println(s"combine2\n${gridToString(combineSample2)}")
 
+//    val sampleStart1 = gridFromString(".#./..#/###")
+//    val oopsie1 = iterate1(sampleRules, sampleStart1)
+//    println("oopsie1:\n" + gridToString(oopsie1))
+//
+//    val sampleStart2 = gridFromString("#..#/..../..../#..#")
+//    val oopsie2 = iterate1(sampleRules, sampleStart2)
+//    println("oopsie2:\n" + gridToString(oopsie2))
+
+    val step1a = iterateN(sampleRules, sampleStart, 2)
+    val lightsOn2 = gridCountPixels(step1a)
+    println(s"lightsOn2 is $lightsOn2")
+
+    val step1 = iterateN(rules, sampleStart, 5)
+
+    println("step1:\n" + gridToString(step1))
+
+    val lightsOn = gridCountPixels(step1)
+
+    println(s"lightsOn is $lightsOn")
 
   }
 
