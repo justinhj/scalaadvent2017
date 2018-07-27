@@ -37,7 +37,7 @@ object Day21 {
     // For debugging render a grid as a string
     def gridToString(g: Grid) : String = {
 
-      val s = s"${g.size}x${g.head.size}\n"
+      val s = s"Size ${g.size}x${g.head.size}\nGrid\n"
 
       val s2 = g.map {
 
@@ -47,7 +47,8 @@ object Day21 {
 
       }.mkString("\n")
 
-      s + s2
+      val both = s + s2
+      both
     }
 
     /*
