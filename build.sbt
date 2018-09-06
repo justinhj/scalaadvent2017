@@ -9,9 +9,9 @@ libraryDependencies += "co.fs2" %% "fs2-io" % "0.10.4"
 
 scalacOptions += "-Ypartial-unification"
 
-libraryDependencies += "org.typelevel" %% "cats-core" % "1.1.0"
+libraryDependencies += "org.typelevel" %% "cats-core" % "1.3.1"
 
-libraryDependencies += "org.typelevel" %% "cats-effect" % "0.10"
+libraryDependencies += "org.typelevel" %% "cats-effect" % "1.0.0"
 
 libraryDependencies += "net.debasishg" %% "redisclient" % "3.5"
 
