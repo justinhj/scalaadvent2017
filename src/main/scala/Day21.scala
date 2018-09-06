@@ -201,11 +201,11 @@ object Day21 {
         (0 until size).map {
           index =>
 
-            r.zipWithIndex.foldLeft(Vector.empty[Vector[Char]]) {
-              case (acc, (s,ii)) =>
+            r.foldLeft(Vector.empty[Vector[Char]]) {
+              case (acc, s) =>
 
                 acc ++ s.zipWithIndex.filter {
-                  case (thing, i) =>
+                  case (_, i) =>
                     index == i
                 }.map(_._1)
             }.flatten

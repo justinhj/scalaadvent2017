@@ -1,7 +1,74 @@
 object Day22 {
 
+  type Map = Vector[Vector[Char]]
+
+  // directions you can face
+
+  sealed trait Direction
+  case object Left extends Direction
+  case object Right extends Direction
+  case object Up extends Direction
+  case object Down extends Direction
+
+  case class Coord(row: Int, col: Int)
+
+  def printMap(map: Map) : Unit = {
+
+    map.foreach {
+      r =>
+        println(r.mkString)
+
+    }
+
+  }
+
+  object World {
+
+    def mapFromString(s : String): Map = {
+
+      val rows = s.split('\n').toVector
+
+      rows.map(_.toVector)
+    }
+
+    def apply(s: String) : World = {
+
+      val m = mapFromString(s)
+      val len = m.size
+      val startPos = Coord(len/2,len/2)
+
+      World(m, startPos, Up, 0)
+    }
+
+  }
+
+  case class World(map: Map, position: Coord, direction: Direction, infectCount : Int) {
+
+    // execute a burst of activity
+
+    def burst() : World = {
+
+
+
+      ???
+
+    }
+
+  }
+
   def main(args: Array[String]): Unit = {
-    println("fuzhou bitches!")
+
+    val sampleMapStr = """..#
+                         |#..
+                         |...""".stripMargin
+
+    // make the world from the map
+
+    val sampleWorld = World(sampleMapStr)
+
+    printMap(sampleWorld.map)
+
+
   }
 
 }
