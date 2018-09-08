@@ -239,19 +239,20 @@ object Day23 {
 
   def main(args: Array[String]) : Unit = {
 
-    val step1Input = Source.fromResource("input23optimized.txt").mkString
+    val step1Input = Source.fromResource("input23.txt").mkString
 
     val step1Program = readInstructionsFromString(step1Input)
 
-//    val s1 = execute(Machine(), step1Program)
+    val s1 = execute(Machine(), step1Program)
 
-  //  println(s"step1 mul was called $s1 times")
+    println(s"step1 mul was called $s1 times")
 
     // part two
 
-    val s2 = execute(Machine(defaultAValue = 1), step1Program)
+    //val s2 = execute(Machine(defaultAValue = 0), step1Program)
 
     //println(s"step1 mul was called $s1 times")
+    
 
   }
 
