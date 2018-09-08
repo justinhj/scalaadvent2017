@@ -4,7 +4,7 @@ import better.files.Resource
 
 object Day22 {
 
-  type Map = Vector[Vector[Char]]
+  type InitialMap = Vector[Vector[Char]]
 
   // directions you can face
 
@@ -34,98 +34,38 @@ object Day22 {
 
   case class Coord(row: Int, col: Int)
 
-  sealed trait State
-  case object Normal extends State
-  case object Infected extends State
-
-  case class Node(var state : State = Normal,
-                  var above: Option[Node] = None,
-                  var below: Option[Node] = None,
-                  var left: Option[Node] = None,
-                  var right: Option[Node] = None
-                 )
-
-  def printMap(map: Map) : Unit = {
-
-//    map.foreach {
-//      r =>
-//        println(r.mkString)
-//
-//    }
-
-  }
+  type State = Char
+  val NormalState : State = '.'
+  val InfectedState : State = '#'
 
   object World {
 
-    def mapFromString(s : String): Map = {
+    def mapFromString(s : String): InitialMap = {
 
       val rows = s.split('\n').toVector
 
       rows.map(_.toVector)
     }
 
-    def linkNodes(nodes: Vector[Vector[Node]]) : Unit = {
-      // we assume square
-      val size = nodes.head.size
+    def createMap(map: InitialMap) : Map[Coord, State] = {
 
-      nodes.zipWithIndex.foreach {
+      val coordStatePairs = map.zipWithIndex.flatMap {
 
-        case (row, rowNumber) =>
+        case (row, rowIndex) =>
 
-          row.zipWithIndex.foreach {
+          row.zipWithIndex.map {
 
-            case (node, colNumber) =>
-
-              // above links
-              if(rowNumber > 0 ) {
-                node.above = Some(nodes(rowNumber - 1)(colNumber))
-              }
-              // below links
-              if(rowNumber < (size - 2)) {
-                node.below = Some(nodes(rowNumber + 1)(colNumber))
-
-              }
-              // right links
-              if(colNumber < (size - 2)) {
-                node.right = Some(nodes(rowNumber)(colNumber + 1))
-
-              }
-              // left links
-              if(colNumber > 0) {
-                node.left = Some(nodes(rowNumber)(colNumber - 1))
-
-              }
+            case (state, colIndex) =>
+              (Coord(rowIndex, colIndex), state)
           }
-
       }
 
-    }
+      coordStatePairs.foldLeft(Map.empty[Coord, State]){
 
-    def nodesAndStartPosFromMap(map: Map) : Node = {
-
-      // we assume square
-      val size = map.head.size
-
-      val nodes: Vector[Vector[Node]] = map.map {
-        row =>
-
-          row.map {
-            node =>
-
-              if(node == '.') Node(Normal)
-              else if (node == '#') Node(Infected)
-              else throw new Exception(s"Invalid node type in map: $node")
-
-          }
-
+        case (acc, (k,v)) =>
+          acc updated (k,v)
       }
 
-      linkNodes(nodes)
-
-      // return the middle node
-
-      val middleRow = nodes(size / 2)
-      middleRow(size / 2)
     }
 
     // Make a world from the string map
@@ -136,17 +76,20 @@ object Day22 {
       // and we can use that to build a graph of Node
       val initialMap = mapFromString(s)
 
-      val startNode = nodesAndStartPosFromMap(initialMap)
+      val nodes = createMap(initialMap)
 
-      World(startNode, Up, 0)
+      val size = initialMap.head.size
+
+      val start = Coord(size/2, size/2)
+
+      World(nodes, start, Up, 0)
     }
 
   }
 
-  case class World(currentNode: Node, direction: Direction, causedInfectionCount : Int) {
+  case class World(nodes : Map[Coord, State], pos: Coord, direction: Direction, causedInfectionCount : Int) {
 
     // execute a burst of activity and produce a new world
-    // note that this looks pure, but it's not, it mutates the Nodes in place
 
     // If the current node is infected, it turns to its right. Otherwise, it turns to its left. (Turning is done in-place; the
     // current node does not change.)
@@ -156,33 +99,29 @@ object Day22 {
 
     def burst() : World = {
 
-      val newDirection = if(currentNode.state == Infected) turnRight(direction) else turnLeft(direction)
+      // We may have moved into the void, and need to create a new node ...
 
-      var newCount : Int = 0
+      val currentState = nodes.getOrElse(pos, NormalState)
 
-      if(currentNode.state == Infected) {
-        currentNode.state = Normal
-        newCount = causedInfectionCount
-      }
-      else {
-        currentNode.state = Infected
-        newCount = causedInfectionCount + 1
-      }
+      val newDirection = if(currentState == InfectedState) turnRight(direction) else turnLeft(direction)
 
-      val nextNode = newDirection match {
+      val newCount = if(currentState == NormalState) causedInfectionCount + 1
+                     else causedInfectionCount
 
+      val newState = if(currentState == NormalState) InfectedState else NormalState
+
+      val newPos = newDirection match {
         case Up =>
-          currentNode.above match {
-            case Some(node) =>
-              node
-            case None =>
-              Node
-          }
-
-
+          Coord(pos.row - 1, pos.col)
+        case Down =>
+          Coord(pos.row + 1, pos.col)
+        case Right =>
+          Coord(pos.row, pos.col + 1)
+        case Left =>
+          Coord(pos.row, pos.col - 1)
       }
 
-      World(nextNode, newDirection, newCount)
+      World(nodes updated (pos, newState), newPos, newDirection, newCount)
 
     }
 
@@ -198,15 +137,33 @@ object Day22 {
 
     val sampleWorld = World(sampleMapStr)
 
-    //printMap(sampleWorld.map)
+    val sampleAnswer = (1 to 10000).foldLeft(sampleWorld) {
+
+      case (world, step) =>
+
+        val newWorld = world.burst()
+        //println(s"$step: ${newWorld.causedInfectionCount}")
+        newWorld
+
+    }
+
+    println(s"sample answer ${sampleAnswer.causedInfectionCount}")
 
     val step1MapStr = Resource.getAsString("input22.txt")(Charset.forName("US-ASCII"))
 
-    val step1World = World(step1MapStr)
+    var step1World = World(step1MapStr)
 
-    var x = 1
+    val step1Answer = (1 to 10000).foldLeft(step1World) {
 
-    x = 2
+      case (world, step) =>
+
+        val newWorld = world.burst()
+        //println(s"$step: ${newWorld.causedInfectionCount}")
+        newWorld
+
+    }
+
+    println(s"step1 answer ${step1Answer.causedInfectionCount}")
 
 
   }
@@ -311,4 +268,102 @@ After a total of 10000 bursts of activity, 5587 bursts will have caused an infec
 
 Given your actual map, after 10000 bursts of activity, how many bursts cause a node to become infected? (Do not count
 nodes that begin infected.)
+
+Step 2
+
+--- Part Two ---
+As you go to remove the virus from the infected nodes, it evolves to resist your attempt.
+
+Now, before it infects a clean node, it will weaken it to disable your defenses. If it encounters an infected node, it
+will instead flag the node to be cleaned in the future. So:
+
+Clean nodes become weakened.
+Weakened nodes become infected.
+Infected nodes become flagged.
+Flagged nodes become clean.
+Every node is always in exactly one of the above states.
+
+The virus carrier still functions in a similar way, but now uses the following logic during its bursts of action:
+
+Decide which way to turn based on the current node:
+If it is clean, it turns left.
+If it is weakened, it does not turn, and will continue moving in the same direction.
+If it is infected, it turns right.
+If it is flagged, it reverses direction, and will go back the way it came.
+Modify the state of the current node, as described above.
+The virus carrier moves forward one node in the direction it is facing.
+Start with the same map (still using . for clean and # for infected) and still with the virus carrier starting in the
+middle and facing up.
+
+Using the same initial state as the previous example, and drawing weakened as W and flagged as F, the middle of the
+infinite grid looks like this, with the virus carrier's position again marked with [ ]:
+
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . . . . # . . .
+. . . #[.]. . . .
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+This is the same as before, since no initial nodes are weakened or flagged. The virus carrier is on a clean node, so
+it still turns left, instead weakens the node, and moves left:
+
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . . . . # . . .
+. . .[#]W . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+The virus carrier is on an infected node, so it still turns right, instead flags the node, and moves up:
+
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . .[.]. # . . .
+. . . F W . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+This process repeats three more times, ending on the previously-flagged node and facing right:
+
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . W W . # . . .
+. . W[F]W . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+Finding a flagged node, it reverses direction and cleans the node:
+
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . W W . # . . .
+. .[W]. W . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+The weakened node becomes infected, and it continues in the same direction:
+
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . W W . # . . .
+.[.]# . W . . . .
+. . . . . . . . .
+. . . . . . . . .
+. . . . . . . . .
+Of the first 100 bursts, 26 will result in infection. Unfortunately, another feature of this evolved virus is speed;
+of the first 10000000 bursts, 2511944 will result in infection.
+
+Given your actual map, after 10000000 bursts of activity, how many bursts cause a node to become infected? (Do not
+count nodes that begin infected.)
+
+
+
+
  */
