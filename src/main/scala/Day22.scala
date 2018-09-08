@@ -14,6 +14,24 @@ object Day22 {
   case object Up extends Direction
   case object Down extends Direction
 
+  def turnLeft(direction : Direction) : Direction = {
+    direction match {
+      case Left => Down
+      case Up => Left
+      case Right => Up
+      case Down => Right
+    }
+  }
+
+  def turnRight(direction : Direction) : Direction = {
+    direction match {
+      case Left => Up
+      case Up => Right
+      case Right => Down
+      case Down => Left
+    }
+  }
+
   case class Coord(row: Int, col: Int)
 
   sealed trait State
@@ -104,16 +122,15 @@ object Day22 {
 
       linkNodes(nodes)
 
-      // TODO
+      // return the middle node
 
-      Node()
+      val middleRow = nodes(size / 2)
+      middleRow(size / 2)
     }
 
     // Make a world from the string map
 
     def apply(s: String) : World = {
-
-      val n = Node()
 
       // create an initial map which is just an array of char,
       // and we can use that to build a graph of Node
@@ -121,20 +138,51 @@ object Day22 {
 
       val startNode = nodesAndStartPosFromMap(initialMap)
 
-      World(n, Up, 0)
+      World(startNode, Up, 0)
     }
 
   }
 
   case class World(currentNode: Node, direction: Direction, causedInfectionCount : Int) {
 
-    // execute a burst of activity
+    // execute a burst of activity and produce a new world
+    // note that this looks pure, but it's not, it mutates the Nodes in place
+
+    // If the current node is infected, it turns to its right. Otherwise, it turns to its left. (Turning is done in-place; the
+    // current node does not change.)
+    // If the current node is clean, it becomes infected. Otherwise, it becomes cleaned. (This is done after the node is
+    // considered for the purposes of changing direction.)
+    // The virus carrier moves forward one node in the direction it is facing.
 
     def burst() : World = {
 
+      val newDirection = if(currentNode.state == Infected) turnRight(direction) else turnLeft(direction)
+
+      var newCount : Int = 0
+
+      if(currentNode.state == Infected) {
+        currentNode.state = Normal
+        newCount = causedInfectionCount
+      }
+      else {
+        currentNode.state = Infected
+        newCount = causedInfectionCount + 1
+      }
+
+      val nextNode = newDirection match {
+
+        case Up =>
+          currentNode.above match {
+            case Some(node) =>
+              node
+            case None =>
+              Node
+          }
 
 
-      ???
+      }
+
+      World(nextNode, newDirection, newCount)
 
     }
 
