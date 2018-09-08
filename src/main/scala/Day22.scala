@@ -1,3 +1,7 @@
+import java.nio.charset.Charset
+
+import better.files.Resource
+
 object Day22 {
 
   type Map = Vector[Vector[Char]]
@@ -12,13 +16,24 @@ object Day22 {
 
   case class Coord(row: Int, col: Int)
 
+  sealed trait State
+  case object Normal extends State
+  case object Infected extends State
+
+  case class Node(var state : State = Normal,
+                  var above: Option[Node] = None,
+                  var below: Option[Node] = None,
+                  var left: Option[Node] = None,
+                  var right: Option[Node] = None
+                 )
+
   def printMap(map: Map) : Unit = {
 
-    map.foreach {
-      r =>
-        println(r.mkString)
-
-    }
+//    map.foreach {
+//      r =>
+//        println(r.mkString)
+//
+//    }
 
   }
 
@@ -31,18 +46,87 @@ object Day22 {
       rows.map(_.toVector)
     }
 
+    def linkNodes(nodes: Vector[Vector[Node]]) : Unit = {
+      // we assume square
+      val size = nodes.head.size
+
+      nodes.zipWithIndex.foreach {
+
+        case (row, rowNumber) =>
+
+          row.zipWithIndex.foreach {
+
+            case (node, colNumber) =>
+
+              // above links
+              if(rowNumber > 0 ) {
+                node.above = Some(nodes(rowNumber - 1)(colNumber))
+              }
+              // below links
+              if(rowNumber < (size - 2)) {
+                node.below = Some(nodes(rowNumber + 1)(colNumber))
+
+              }
+              // right links
+              if(colNumber < (size - 2)) {
+                node.right = Some(nodes(rowNumber)(colNumber + 1))
+
+              }
+              // left links
+              if(colNumber > 0) {
+                node.left = Some(nodes(rowNumber)(colNumber - 1))
+
+              }
+          }
+
+      }
+
+    }
+
+    def nodesAndStartPosFromMap(map: Map) : Node = {
+
+      // we assume square
+      val size = map.head.size
+
+      val nodes: Vector[Vector[Node]] = map.map {
+        row =>
+
+          row.map {
+            node =>
+
+              if(node == '.') Node(Normal)
+              else if (node == '#') Node(Infected)
+              else throw new Exception(s"Invalid node type in map: $node")
+
+          }
+
+      }
+
+      linkNodes(nodes)
+
+      // TODO
+
+      Node()
+    }
+
+    // Make a world from the string map
+
     def apply(s: String) : World = {
 
-      val m = mapFromString(s)
-      val len = m.size
-      val startPos = Coord(len/2,len/2)
+      val n = Node()
 
-      World(m, startPos, Up, 0)
+      // create an initial map which is just an array of char,
+      // and we can use that to build a graph of Node
+      val initialMap = mapFromString(s)
+
+      val startNode = nodesAndStartPosFromMap(initialMap)
+
+      World(n, Up, 0)
     }
 
   }
 
-  case class World(map: Map, position: Coord, direction: Direction, infectCount : Int) {
+  case class World(currentNode: Node, direction: Direction, causedInfectionCount : Int) {
 
     // execute a burst of activity
 
@@ -66,7 +150,15 @@ object Day22 {
 
     val sampleWorld = World(sampleMapStr)
 
-    printMap(sampleWorld.map)
+    //printMap(sampleWorld.map)
+
+    val step1MapStr = Resource.getAsString("input22.txt")(Charset.forName("US-ASCII"))
+
+    val step1World = World(step1MapStr)
+
+    var x = 1
+
+    x = 2
 
 
   }
