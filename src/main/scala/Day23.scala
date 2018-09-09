@@ -245,7 +245,7 @@ object Day23 {
 
     val s1 = execute(Machine(), step1Program)
 
-    println(s"step1 mul was called $s1 times")
+    println(s"step1 mul was called $s1 times") // 4225
 
     // part two
 
