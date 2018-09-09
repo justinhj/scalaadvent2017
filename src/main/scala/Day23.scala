@@ -252,7 +252,7 @@ object Day23 {
     //val s2 = execute(Machine(defaultAValue = 0), step1Program)
 
     //println(s"step1 mul was called $s1 times")
-    
+
 
   }
 
