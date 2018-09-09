@@ -38,7 +38,7 @@
 
 int main(int argc, char **args) {
 
-	int a = 0; // set to 1 for step 2
+	int a = 1; // set to 1 for step 2
 	int e = 0;
 	int h = 0;
 	int b = 67;
@@ -47,6 +47,8 @@ int main(int argc, char **args) {
 	int g = 0;
 	int c = b;
 
+	int mul = 0;
+	
 	printf("starting\n");
 	
 	if(a != 0) {
@@ -57,7 +59,8 @@ int main(int argc, char **args) {
 
  label1:
 	printf("label1\n");
-	b = (b * 100);
+
+	b = (b * 100); mul ++;
 	b = b - -100000;
 	c = b;
 	c = c - -17000;
@@ -72,7 +75,7 @@ int main(int argc, char **args) {
 
  label4:
 	g = d;
-	g = g * e;
+	g = g * e; mul ++;
 	g = g - b;
 
 	if(g != 0) goto label3;
@@ -80,7 +83,7 @@ int main(int argc, char **args) {
 	f = 0;
 	
  label3:
-	printf("label3 f=%d\n", f);
+	printf("label3 f=%d g=%d, h=%d\n", f, g, h);
 	e = e - -1;
 	g = e;
 	g = g - b;
@@ -105,12 +108,13 @@ int main(int argc, char **args) {
 
 	goto end;
  label7:
-	printf("label17\n");
+	printf("label7 g=%d, b=%d\n", g, b);
 	b = b - -17; 
 	goto label2 ;
  end:
 	
-	printf("haha b is %d\n", b);
+	printf("mul count is %d\n", mul);
+	printf("h is %d\n", h);
 
 
 }
