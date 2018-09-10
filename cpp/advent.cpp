@@ -9,7 +9,7 @@
 Register usage notes
 
 b starts at 106700
-c starts at 123700
+c starts at 123700 (+ 106700 117000)
 d starts at 2
 e starts at 2, is incremented in l3 by 1
 f starts at 1, set to 0 by g 
@@ -146,47 +146,57 @@ int main(int argc, char **args) {
  label4:
 
 	// loops back here until g is zero
+
+	// will find if d is a factor of b (106700) by increasing values of e
+	// if d * e = b then we found a factor 
 	
 	printf("label4 a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
 	//	std::cin.get();
 	g = d;
 	g = g * e; mul ++;
-	g = g - b;
+	g = g - b;        // check if (d*e) == b
 
-	if(g != 0) goto label3;
+	if(g != 0) goto label3;  // if it is NOT go to label 3
 
 	printf("RESET F  a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
-	std::cin.get();
+	//std::cin.get();
 
-	f = 0;
+	f = 0; 
 	
 	
  label3:
 	printf("label3 a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
 	//	std::cin.get();
 
-	e = e - -1; 
+	e = e - -1;  // increment e 
 	g = e;
 	g = g - b;
 
-	if(g != 0) goto label4;
+	if(g != 0) goto label4; // CHECK IF WE CHECKED ALL NUMBERS LESS THAN e
 
-	d = d - -1;
+	// DONE CHECKING UP TO e
+	
+	d = d - -1; // NEXT d
 
 	g = d;
-	g = g - b;
+	g = g - b; // check if d == b, we're done checking all the d's 
 
-	if(g != 0) goto label5;
+	if(g != 0) goto label5; // set e to 2 again , try all the e's
 	
-	if(f != 0) goto label6;
+	if(f != 0) goto label6; // f is set to zero if we found a factor
 
-	h = h - -1;
+	h = h - -1; // increment h
+		
+	printf("INC H f=%d g=%d, h=%d, b=%d e=%d\n", f, g, h, b, e);
+	std::cin.get();
+	
+
  label6:
 	printf("label6 f=%d g=%d, h=%d, b=%d e=%d\n", f, g, h, b, e);
 	std::cin.get();
 		
 	g = b;
-	g = g - c;
+	g = g - c; // CHECK IF WE CHECKED ALL THE NUMBERS 
 
 	if(g != 0) goto label7; // will exit when g is zero
 
