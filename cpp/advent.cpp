@@ -1,6 +1,60 @@
 // -*- compile-command:"g++ advent.cpp -o advent"; -*-
 
 #include <stdio.h>
+#include <iostream>
+
+
+/*
+
+Register usage notes
+
+b starts at 106700
+c starts at 123700
+d starts at 2
+e starts at 2, is incremented in l3 by 1
+f starts at 1, set to 0 by g 
+
+g resets at l4 to d * e then - b
+  if it's zero then f is set to 0 
+
+  resets in l3 to (e - b)
+
+
+
+loop starts with b=106700 and c=123700
+
+l2
+
+ f=1 and d=2 
+
+l5
+
+ e = 2
+
+l4 
+
+  g = d (d starts at zero)
+
+  g *= e (2)
+
+  subtract b from g (106700) 
+
+  if g != 0 go to l3
+
+  f = 0 
+
+l3 
+
+  e = e - -1 
+  g = (e - b)
+
+  if(g != 0) got to l4
+
+  
+
+
+ */
+
 
 // set b 67
 // set c b
@@ -39,14 +93,14 @@
 int main(int argc, char **args) {
 
 	int a = 1; // set to 1 for step 2
-	int e = 0;
-	int h = 0;
 	int b = 67;
-	int f = 0;
-	int d = 0;
-	int g = 0;
 	int c = b;
-
+	int d = 0;
+	int e = 0;
+	int f = 0;
+	int g = 0;
+	int h = 0;
+	
 	int mul = 0;
 	
 	printf("starting\n");
@@ -65,26 +119,53 @@ int main(int argc, char **args) {
 	c = b;
 	c = c - -17000;
 
+	printf("start a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
+	//	std::cin.get();
+	
+	// Code never comes back here
+	// b=106700, c=123700
+
+	// diff between b and c is 17000
+	
  label2:
 
+	// will loop back here until g is zero 
+	
+	printf("label2 a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
+	//	std::cin.get();
 	f = 1;
 	d = 2;
 
- label5:	
+ label5:
+	printf("label5 a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
+	//	std::cin.get();
 	e = 2;
 
+	// e starts at 
+	
  label4:
+
+	// loops back here until g is zero
+	
+	printf("label4 a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
+	//	std::cin.get();
 	g = d;
 	g = g * e; mul ++;
 	g = g - b;
 
 	if(g != 0) goto label3;
-	
+
+	printf("RESET F  a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
+	std::cin.get();
+
 	f = 0;
 	
+	
  label3:
-	printf("label3 f=%d g=%d, h=%d\n", f, g, h);
-	e = e - -1;
+	printf("label3 a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
+	//	std::cin.get();
+
+	e = e - -1; 
 	g = e;
 	g = g - b;
 
@@ -101,15 +182,20 @@ int main(int argc, char **args) {
 
 	h = h - -1;
  label6:
+	printf("label6 f=%d g=%d, h=%d, b=%d e=%d\n", f, g, h, b, e);
+	std::cin.get();
+		
 	g = b;
 	g = g - c;
 
-	if(g != 0) goto label7;
+	if(g != 0) goto label7; // will exit when g is zero
 
 	goto end;
  label7:
-	printf("label7 g=%d, b=%d\n", g, b);
-	b = b - -17; 
+	printf("label7 f=%d g=%d, h=%d, b=%d e=%d\n", f, g, h, b, e);
+	std::cin.get();
+		
+	b = b - -17; // counts up 17 at a time 
 	goto label2 ;
  end:
 	
