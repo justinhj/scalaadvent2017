@@ -115,10 +115,16 @@ int main(int argc, char **args) {
 	printf("label1\n");
 
 	b = (b * 100); mul ++;
+
 	b = b - -100000;
 	c = b;
 	c = c - -17000;
 
+	// TEMP HACK view smaller runs by changing the bounding variables b and c
+
+	b = 20;
+	c = 200;
+	
 	printf("start a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
 	//	std::cin.get();
 	
@@ -127,18 +133,19 @@ int main(int argc, char **args) {
 
 	// diff between b and c is 17000
 	
- label2:
+ label2: // FOR D = 2 to B, we're going to check all D's to see if they are prime or not
+	     // B starts at 106700 and continues until it is 123700
 
 	// will loop back here until g is zero 
 	
 	printf("label2 a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
 	//	std::cin.get();
-	f = 1;
+	f = 1; // reset the f flag (f is cleared if the (d*e) == current b
 	d = 2;
 
  label5:
 	printf("label5 a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
-	//	std::cin.get();
+	//std::cin.get();
 	e = 2;
 
 	// e starts at 
@@ -151,22 +158,23 @@ int main(int argc, char **args) {
 	// if d * e = b then we found a factor 
 	
 	printf("label4 a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
-	//	std::cin.get();
+	//std::cin.get();
+
 	g = d;
 	g = g * e; mul ++;
 	g = g - b;        // check if (d*e) == b
 
 	if(g != 0) goto label3;  // if it is NOT go to label 3
 
-	printf("RESET F  a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
-	//std::cin.get();
+	printf("Clear F because d(%d) divides into b(%d) e(%d) times  a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", d,b,e,a,b,c,d,e,f,g,h);
+    //std::cin.get();
 
 	f = 0; 
 	
 	
  label3:
 	printf("label3 a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
-	//	std::cin.get();
+	//std::cin.get();
 
 	e = e - -1;  // increment e 
 	g = e;
@@ -176,24 +184,34 @@ int main(int argc, char **args) {
 
 	// DONE CHECKING UP TO e
 	
-	d = d - -1; // NEXT d
+	d = d - -1; // GET THE NEXT d
 
 	g = d;
 	g = g - b; // check if d == b, we're done checking all the d's 
 
 	if(g != 0) goto label5; // set e to 2 again , try all the e's
+
+	if(f == 0) {
+		printf("WILL INC H a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
+		//std::cin.get();
+	}
+	else {
+		printf("WILL NOT INC H a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
+		//std::cin.get();
+
+	}
 	
 	if(f != 0) goto label6; // f is set to zero if we found a factor
 
 	h = h - -1; // increment h
 		
-	printf("INC H f=%d g=%d, h=%d, b=%d e=%d\n", f, g, h, b, e);
-	std::cin.get();
+	printf("INC H a=%d b=%d c=%d d=%d e=%d f=%d g=%d h=%d\n", a,b,c,d,e,f,g,h);
+	//std::cin.get();
 	
 
  label6:
 	printf("label6 f=%d g=%d, h=%d, b=%d e=%d\n", f, g, h, b, e);
-	std::cin.get();
+	//std::cin.get();
 		
 	g = b;
 	g = g - c; // CHECK IF WE CHECKED ALL THE NUMBERS 
@@ -202,14 +220,14 @@ int main(int argc, char **args) {
 
 	goto end;
  label7:
-	printf("label7 f=%d g=%d, h=%d, b=%d e=%d\n", f, g, h, b, e);
-	std::cin.get();
+	printf("label7 NEXT B  f=%d g=%d, h=%d, b=%d e=%d\n", f, g, h, b, e);
+	//std::cin.get();
 		
 	b = b - -17; // counts up 17 at a time 
 	goto label2 ;
  end:
 	
-	printf("mul count is %d\n", mul);
+	//	printf("mul count is %d\n", mul);
 	printf("h is %d\n", h);
 
 
