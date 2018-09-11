@@ -4,4 +4,7 @@ target/
 .DS_Store
 .history
 *.sc
+cpp/adventcpp/advent.dSYM
+cpp/advent_debug.dSYM
 cpp/advent
+cpp/advent.dSYM
