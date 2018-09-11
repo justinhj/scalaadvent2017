@@ -258,15 +258,15 @@ object Day23 {
 
     val step1Program = readInstructionsFromString(step1Input)
 
-    //val s1 = execute(Machine(), step1Program)
+    val s1 = execute(Machine(), step1Program)
 
-    //println(s"step1 mul was called $s1 times") // 4225
+    println(s"step1 mul was called $s1 times") // 4225
 
     // part two
 
-    // Through rewriting the code in C and learning how it works I discovered that step is doing the following:
-    // For all the numbers from 106700 to 123700 (in steps of 17) find the number of factors of each number
-    // The register h accumulates the sum of these. 1 is not included.
+    // Through rewriting the code in C and learning how it works I discovered that it is doing the following:
+    // For all the numbers from 106700 to 123700 (in steps of 17) find the number that have factors (other than 2 and
+    // themselves). The register h accumulates the sum of these.
 
     def hasFactors(n: Int) : Int = {
 
@@ -288,13 +288,7 @@ object Day23 {
 
     }
 
-    println(s"Answer 2 $step2Answer")
-
-    //val s2 = execute(Machine(defaultAValue = 0), step1Program)
-
-    // v al allPrimes = genPrimes(123700).filter(p => p >= 106700)
-
-//    println(s"primes = ${allPrimes}")
+    println(s"Answer 2 $step2Answer") // 905
 
   }
 
